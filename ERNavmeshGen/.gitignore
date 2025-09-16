@@ -1,0 +1,44 @@
+gitignore
+# Visual Studio and Build files
+## Ignore Visual Studio temp files, build outputs, and misc generated files.
+## For a more complete version, you can refer to the GitHub gitignore template.
+# See https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
+
+# Compiled binaries and object files
+*.exe
+*.dll
+*.obj
+*.lib
+
+# Build-specific directories
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bin/
+obj/
+ipch/
+
+# Visual Studio files
+.vs/          # Visual Studio 2017+ hidden folder
+*.suo         # Solution user options
+*.user
+*.ncb
+*.aps
+*.opensdf
+*.sdf
+*.log
+*.VC.db
+
+# CMake build directory
+out/
+build/
+
+# Rider / JetBrains specific files
+# https://youtrack.jetbrains.com/articles/SUPPORT-A-226/What-files-produced-by-Rider-should-be-ignored-in-VCS-Perforce-Git
+.idea/
+.idea.sln/
+
+# User-specific settings (should not be shared)
+.idea/workspace.xml
+*.dotsettings.user
