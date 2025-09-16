@@ -7,5 +7,3 @@ sdk inside the game. Currently this project is just looking to initialize the TL
 Once we have it working in a running game, we can then do the manual mapping and start initializing the parts of the binary
 necessary for navmesh generation.
 
-I have made considerably more progress on DS3, but have not made any AoBs for either beyond what was provided to me by
-12thAvenger and ChurchGuard. 
