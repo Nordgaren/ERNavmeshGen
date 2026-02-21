@@ -5,7 +5,7 @@
 #include "Pattern.h"
 
 namespace HavokFunctions {
-	extern void init();
+	extern void init(std::string& gamePath);
 
 	namespace hkReferencedObject {
 		FUNC_DEF(void, addReference, (::hkReferencedObject* instance))
@@ -46,9 +46,10 @@ namespace HavokFunctions {
 			void* vtable;
 			void* hkLifoAllocator;
 		} CSHavokManImp;
-		VAR_DEF(CSHavokManImp*, CSHavokManImpPtr)
-		VAR_DEF(DWORD, HavokTlsValueOne)
-		VAR_DEF(DWORD, HavokTlsValueTwo)
+		VAR_DEF(CSHavokManImp*, csHavokManImpPtr)
+		FUNC_DEF(CSHavokManImp*, constructor, (CSHavokManImp* imp))
+		VAR_DEF(DWORD, havokLoggerTLSValue)
+		VAR_DEF(DWORD, havokAllocatorTLSValue)
 	}
 
 	namespace hkSignal1hknpAction {

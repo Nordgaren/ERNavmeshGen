@@ -18,7 +18,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
             freopen_s(&fpstderr,"CONOUT$", "w", stderr);
             SetWindowText(GetConsoleWindow(), L"ERNavmeshGen");
         }
-        plog::init(plog::verbose, R"(C:\Users\Nordgaren\RiderProjects\ERNavmeshGen\x64\Release\ERNavmeshGenLog.txt)");
+        plog::init(plog::verbose, R"(ERNavmeshGenLog.txt)");
         PLOG_INFO << "NavmeshGenLog.txt";
         break;
     case DLL_THREAD_ATTACH:

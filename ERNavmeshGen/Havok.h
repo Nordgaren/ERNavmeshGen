@@ -5,7 +5,9 @@
 #include "GhidraStructs/GhidraStructs.h"
 
 namespace Havok {
-    void init();
+    
+    void* implConstructHook(void* mem, void* typeCopier, bool isPackfile, bool deleteCopier);
+    void init(std::string& gamePath);
 
     std::unique_ptr<hkSerialize::Load> getLoader();
 

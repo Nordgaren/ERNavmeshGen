@@ -1,8 +1,14 @@
 #include "gtest/gtest.h"
 #include "../ERNavmeshGen/API.h"
 
-TEST(TestCaseName, TestName)
+const char* er = R"(G:\Steam\steamapps\common\ELDEN RING\Game\eldenring_patched.dll)";
+
+TEST(DS3NAVMA_BATCH_CONVERT, EXPORTS)
 {
-  EXPECT_EQ(1, 1);
-  EXPECT_TRUE(true);
+  SetGamePath(er);
+  const char* in = R"(C:\Users\rscos\Documents\mod-dev\elden-scrolls\mods\map\m34\m34_10_00_00\l34_10_00_00-hkxbhd)";
+  const char* compendium = R"(C:\Users\rscos\Downloads\l31_00_00_00.compendium)";
+  bool lol = BatchGenerateNavMeshFromCollisionAPI(in, "");
+  
+  EXPECT_TRUE(lol);
 }

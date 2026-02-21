@@ -5,14 +5,14 @@
 #include "Util/hkArrayUtil.h"
 #include "Util/HookUtil.h"
 
-void* implConstructHook(void* mem, void* typeCopier, bool isPackfile, bool deleteCopier)
+void* Havok::implConstructHook(void* mem, void* typeCopier, bool isPackfile, bool deleteCopier)
 {
 	return HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor(mem, nullptr, true, false);
 }
 
-void Havok::init()
+void Havok::init(std::string& gamePath)
 {
-	HavokFunctions::init();
+	HavokFunctions::init(gamePath);
 }
 
 std::unique_ptr<hkSerialize::Load> Havok::getLoader()
@@ -37,6 +37,7 @@ std::unique_ptr<hkReflect::Var> Havok::load(hkSerialize::Load* loader, const std
 {
 	hkIo::Detail::ReadBufferAdapter readBufferAdapter { };
 	readBufferAdapter.impl = HavokFunctions::hkIo::Detail::createReaderImpl(path.c_str());
+	
 
 	std::unique_ptr<hkReflect::Var> var = std::make_unique<hkReflect::Var>();
 	HavokFunctions::hkSerialize::Load::toVar(loader, var.get(), &readBufferAdapter, nullptr);
@@ -53,12 +54,13 @@ hkResult Havok::save(hkReflect::Var* var, const std::string& path)
 	writeBufferAdapter.impl = (hkIo::Detail::WriteBufferImpl*)HavokFunctions::hkIo::Detail::createWriterImpl(
 		stream.writer);
 
-	HavokFunctions::hkOstream::destructor(&stream);
 
 	hkResult result;
 
-	HOOK_SCOPED(HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor, implConstructHook);
+	// HOOK_SCOPED(HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor, implConstructHook);
 	HavokFunctions::hkSerialize::Save::contentsVar(&save, &result, var, &writeBufferAdapter);
+	HavokFunctions::hkOstream::destructor(&stream);
+	
 	return result;
 }
 
