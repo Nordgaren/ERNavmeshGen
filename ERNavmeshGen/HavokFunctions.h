@@ -5,7 +5,7 @@
 #include "Pattern.h"
 
 namespace HavokFunctions {
-	extern void init(std::string& gamePath);
+	bool init(const std::string& gamePath);
 
 	namespace hkReferencedObject {
 		FUNC_DEF(void, addReference, (::hkReferencedObject* instance))

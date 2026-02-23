@@ -43,6 +43,7 @@ public:
     bool FixImportAddressTable() const;
     bool FixMemPermissions() const;
     static const PEHelper *ManualLoadPE(std::string& path);
+    bool Execute() const;
     bool FixReloc() const;
     bool PatchIAT() const;
     bool HookIATEntry(const std::string& moduleName, const std::string& functionName, uintptr_t newFunc) const;
@@ -51,6 +52,8 @@ public:
     bool IsDLL() const;
     bool IsExecutable() const;
     bool ResolveExceptionHandlers() const;
+    void PatchPEHeadersToDLL();
+    uint32_t rva2Foa(uint32_t rva) const;
 
 private:
     static std::vector<uint8_t> loadFileFromDisk(std::string& path);
@@ -58,5 +61,4 @@ private:
     bool _isMapped;
     bool checkMapped() const;
     bool checkMappedExports() const;
-    uint32_t rva2Foa(uint32_t rva) const;
 };

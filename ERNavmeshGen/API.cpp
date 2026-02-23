@@ -5,7 +5,6 @@
 #include "export.h"
 #include <string>
 
-#include "HavokFunctions.h"
 #include "NavGen.h"
 #include "Util/fileio.h"
 
@@ -23,8 +22,12 @@ NAVMA_API bool GenerateNavMeshFromCollisionAPI(const char* path, const char* com
         return false;
     }
     
-    Havok::init(gamePath);
-	
+    if (!Havok::init(gamePath))
+    {
+        PLOG_ERROR << "Failed to init Havok";
+        return false;
+    }
+
     std::string colPath = path;
     std::string compendium = compendiumPath ? compendiumPath : "";
 	PLOG_INFO << "Generating navmesh from: " << colPath;
@@ -43,7 +46,12 @@ static bool BatchGenerateNavMeshFromCollision(const std::string& folder, const c
         return false;
     }
 
-    Havok::init(gamePath);
+    if (!Havok::init(gamePath))
+    {
+        PLOG_ERROR << "Failed to init Havok";
+        return false;
+    }
+    
     std::string compendium = compendiumPath ? compendiumPath : "";
     
     PLOG_INFO << "Generating navmesh from all files in " << folder;

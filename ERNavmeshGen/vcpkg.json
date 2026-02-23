@@ -4,7 +4,9 @@
   "version-string": "0.0.1",
     "dependencies": [
         "detours",
-        "plog"
+        "plog",
+        "zydis",
+        "keystone"
     ],
   "builtin-baseline": "21bbb14c4113b89cd06402e852e075341722304f"
 }

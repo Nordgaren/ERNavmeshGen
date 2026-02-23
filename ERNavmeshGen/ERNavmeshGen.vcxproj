@@ -147,12 +147,16 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\vcpkg\installed\x64-windows\include</AdditionalIncludeDirectories>
+      <ControlFlowGuard>false</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\vcpkg\installed\x64-windows\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)detours.lib;</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -165,16 +169,55 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="API.h" />
+    <ClInclude Include="DLLPatcher.h" />
     <ClInclude Include="export.h" />
+    <ClInclude Include="GhidraStructs\BuiltInTypes.h" />
+    <ClInclude Include="GhidraStructs\GhidraStructs.h" />
+    <ClInclude Include="GhidraStructs\hkAabb.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMesh.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshClearanceCache.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshClearanceCacheSeeding.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshEdgeMatchingParameters.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshGenerationOutputs.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshGenerationSnapshot.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshGenerationUtilsSettings.h" />
+    <ClInclude Include="GhidraStructs\hkaiNavMeshSimplificationUtils.h" />
+    <ClInclude Include="GhidraStructs\hkaiOverlappingTriangles.h" />
+    <ClInclude Include="GhidraStructs\hkArray.h" />
+    <ClInclude Include="GhidraStructs\hkBitField.h" />
+    <ClInclude Include="GhidraStructs\hkBitFieldStorage.h" />
+    <ClInclude Include="GhidraStructs\hkGeometry.h" />
+    <ClInclude Include="GhidraStructs\hknpAction.h" />
+    <ClInclude Include="GhidraStructs\hknpActionManager.h" />
+    <ClInclude Include="GhidraStructs\hknpBodyId.h" />
+    <ClInclude Include="GhidraStructs\hknpPhysicsSceneData.h" />
+    <ClInclude Include="GhidraStructs\hknpPhysicsSytemData.h" />
+    <ClInclude Include="GhidraStructs\hknpShape.h" />
+    <ClInclude Include="GhidraStructs\hknpVehicleDriverInputAnalogStatus.h" />
+    <ClInclude Include="GhidraStructs\hkOstream.h" />
+    <ClInclude Include="GhidraStructs\hkReferencedObject.h" />
+    <ClInclude Include="GhidraStructs\hkResult.h" />
+    <ClInclude Include="GhidraStructs\hkRootLevelContainer.h" />
+    <ClInclude Include="GhidraStructs\hkVector4.h" />
+    <ClInclude Include="GhidraStructs\Load.h" />
+    <ClInclude Include="GhidraStructs\ReadBufferAdapter.h" />
+    <ClInclude Include="GhidraStructs\Save.h" />
+    <ClInclude Include="GhidraStructs\Var.h" />
+    <ClInclude Include="GhidraStructs\WriteBufferAdapter.h" />
+    <ClInclude Include="GhidraStructs\WriteBufferImpl.h" />
     <ClInclude Include="Havok.h" />
     <ClInclude Include="HavokFunctions.h" />
     <ClInclude Include="NavGen.h" />
     <ClInclude Include="Pattern.h" />
     <ClInclude Include="Signature.h" />
     <ClInclude Include="stb.h" />
+    <ClInclude Include="Util\fileio.h" />
+    <ClInclude Include="Util\FunctionContext.h" />
     <ClInclude Include="Util\hkArrayUtil.h" />
     <ClInclude Include="Util\hkArrayUtil.inl" />
     <ClInclude Include="Util\HookUtil.h" />
+    <ClInclude Include="Util\InstructionCursor.h" />
+    <ClInclude Include="Util\pePatcher.h" />
     <ClInclude Include="Util\Singleton.h" />
     <ClInclude Include="Util\Singleton.inl" />
   </ItemGroup>
@@ -183,7 +226,16 @@
     <Content Include="README.md" />
     <Content Include="vcpkg.json" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PELoader\PELoader.vcxproj">
+      <Project>{eca04b54-bf24-41a3-8c13-b6761f6c6713}</Project>
+      <Name>PELoader</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
 </Project>

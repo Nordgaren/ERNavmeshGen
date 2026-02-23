@@ -122,6 +122,23 @@ const PEHelper* PEHelper::ManualLoadPE(std::string& path) {
     return pe;
 }
 
+bool PEHelper::Execute() const {
+    uintptr_t base = GetBaseAddress();
+    
+    // 1. Call TLS Callbacks
+    auto tlsDir = GetImageDataDirectory(IMAGE_DIRECTORY_ENTRY_TLS);
+    if (tlsDir->Size > 0) {
+        auto* pTls = reinterpret_cast<PIMAGE_TLS_DIRECTORY>(base + tlsDir->VirtualAddress);
+        auto* callback = reinterpret_cast<PIMAGE_TLS_CALLBACK*>(pTls->AddressOfCallBacks);
+        while (callback && *callback) {
+            (*callback)(reinterpret_cast<PVOID>(base), DLL_PROCESS_ATTACH, nullptr);
+            callback++;
+        }
+    }
+    
+    return true;
+}
+
 bool PEHelper::FixReloc() const {
     uintptr_t pPeBaseAddress = GetBaseAddress();
     PIMAGE_DATA_DIRECTORY pEntryBaseRelocDataDir = GetImageDataDirectory(IMAGE_DIRECTORY_ENTRY_BASERELOC);
@@ -187,7 +204,7 @@ bool PEHelper::FixReloc() const {
 bool PEHelper::FixImportAddressTable() const {
     PIMAGE_DATA_DIRECTORY pEntryImportDataDir = GetImageDataDirectory(IMAGE_DIRECTORY_ENTRY_IMPORT);
     uintptr_t pPeBaseAddress = GetBaseAddress();
-    // Pointer to an import descriptor for a DLL
+    // Pointer to an import descriptor for a PE
     // Iterate over the import descriptors
     for (SIZE_T i = 0; i < pEntryImportDataDir->Size; i += sizeof(IMAGE_IMPORT_DESCRIPTOR)) {
         // Get the current import descriptor
@@ -259,9 +276,7 @@ bool PEHelper::FixImportAddressTable() const {
 bool PEHelper::PatchIAT() const {
     const uintptr_t baseAddress = GetBaseAddress();
     const PIMAGE_DATA_DIRECTORY importDataDirectory = GetImageDataDirectory(IMAGE_DIRECTORY_ENTRY_IMPORT);
-    const auto importAddressTable = reinterpret_cast<PIMAGE_IMPORT_DESCRIPTOR>(
-        baseAddress + importDataDirectory->VirtualAddress
-    );
+    const auto importAddressTable = (PIMAGE_IMPORT_DESCRIPTOR)(baseAddress + (uintptr_t)importDataDirectory->VirtualAddress);
     const size_t count = importDataDirectory->Size / sizeof(IMAGE_IMPORT_DESCRIPTOR) - 1;
 
     // return false if the size of the import directory is 0
@@ -359,7 +374,7 @@ bool PEHelper::FixMemPermissions() const {
             dwProtection = PAGE_EXECUTE_READWRITE;
 
         // Apply the determined memory protection to the section.
-        if (!VirtualProtect((PVOID)(pPeBaseAddress + pImgSecHdr[i].VirtualAddress), pImgSecHdr[i].SizeOfRawData,
+        if (!VirtualProtect((PVOID)(pPeBaseAddress + pImgSecHdr[i].VirtualAddress), pImgSecHdr[i].Misc.VirtualSize,
                             dwProtection, &dwOldProtection)) {
             PRINT_WINAPI_ERR("VirtualProtect");
             return false;
@@ -459,6 +474,16 @@ bool PEHelper::checkMapped() const {
 
 bool PEHelper::checkMappedExports() const {
     return true;
+}
+
+void PEHelper::PatchPEHeadersToDLL() {
+    PIMAGE_DOS_HEADER dosHeader = GetDosHeader();
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) return;
+
+    PIMAGE_NT_HEADERS64 ntHeaders = (PIMAGE_NT_HEADERS64)(_baseAddress + dosHeader->e_lfanew);
+    if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) return;
+
+    ntHeaders->FileHeader.Characteristics |= IMAGE_FILE_DLL;
 }
 
 uint32_t PEHelper::rva2Foa(const uint32_t rva) const {

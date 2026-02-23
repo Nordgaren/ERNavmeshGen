@@ -8,8 +8,6 @@
 #include <plog/Log.h>
 #include <filesystem>
 
-#include "export.h"
-
 
 bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& compendiumPathIn)
 {

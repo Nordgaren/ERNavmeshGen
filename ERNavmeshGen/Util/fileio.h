@@ -1,10 +1,7 @@
 #pragma once
 #include <windows.h>
 #include <commdlg.h>
-#include <shlobj.h>
-#include <plog/Log.h>
 #include <fstream>
-#include <sstream>
 #include <algorithm>
 
 inline bool ends_with(std::string const& value, std::string const& ending)
@@ -21,7 +18,51 @@ inline bool ends_with(std::wstring const& value, std::wstring const& ending)
 
 
 namespace fileIO {
-	std::vector<std::wstring> GetAllFilesInFolder(std::wstring folder) {
+	inline std::vector<uint8_t> readFile(const std::string& filename) {
+		// 1. Open the file in binary mode, and position the pointer at the end (std::ios::ate)
+		std::ifstream file(filename, std::ios::binary | std::ios::ate);
+
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file: " + filename);
+		}
+
+		// 2. Get the file size and seek back to the beginning
+		std::streamsize size = file.tellg();
+		file.seekg(0, std::ios::beg);
+
+		// 3. Pre-allocate the vector to the exact file size
+		std::vector<uint8_t> buffer(size);
+
+		// 4. Read the data into the vector
+		// We must cast the uint8_t* to char* because std::ifstream::read expects a char*
+		if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+			return buffer;
+		} else {
+			throw std::runtime_error("Failed to read the complete file: " + filename);
+		}
+	}
+	
+	inline void writeFile(const std::string& filename, const std::vector<uint8_t>& data) {
+		// 1. Open the file in binary mode for writing
+		// Note: This will overwrite an existing file. If you want to append, 
+		// add `| std::ios::app` to the open mode.
+		std::ofstream file(filename, std::ios::binary);
+
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file for writing: " + filename);
+		}
+
+		// 2. Write the data in one go
+		// We must cast the const uint8_t* to const char* because std::ofstream::write expects a const char*
+		if (!file.write(reinterpret_cast<const char*>(data.data()), data.size())) {
+			throw std::runtime_error("Failed to write data to file: " + filename);
+		}
+    
+		// 3. File closes automatically when the std::ofstream object goes out of scope,
+		// but you can explicitly call file.close() if you need to check for closing errors.
+	}
+	
+	inline std::vector<std::wstring> GetAllFilesInFolder(std::wstring folder) {
 		WIN32_FIND_DATA data;
 		HANDLE hFind;
 		std::vector<std::wstring> Ret = {};
@@ -43,7 +84,7 @@ namespace fileIO {
 		}
 		return Ret;
 	}
-	std::vector<std::string> GetAllFilesInFolder(std::string folder) {
+	inline std::vector<std::string> GetAllFilesInFolder(std::string folder) {
 		WIN32_FIND_DATAA data;
 		HANDLE hFind;
 		std::vector<std::string> Ret = {};

@@ -7,7 +7,7 @@
 namespace Havok {
     
     void* implConstructHook(void* mem, void* typeCopier, bool isPackfile, bool deleteCopier);
-    void init(std::string& gamePath);
+    bool init(std::string& gamePath);
 
     std::unique_ptr<hkSerialize::Load> getLoader();
 

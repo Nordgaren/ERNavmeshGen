@@ -1,25 +1,40 @@
 ﻿#include "HavokFunctions.h"
+
+#include <filesystem>
 #include <unordered_map>
 #include <Windows.h>
-#include <__msvc_ostream.hpp>
 #include "../PELoader/PEHelper.h"
-
-#include "Signature.h"
 #include <winternl.h> // Required for PTEB structure
 
+#include "DLLPatcher.h"
 #include "Havok.h"
 #include "Util/HookUtil.h"
+#include "Util/pePatcher.h"
 
 namespace HavokFunctions {
 	// Need this later for multi-threading possibly. Will need to de-allocate when we unload. Possibly when we exit thread.
 	static std::list<CSHavokMan::CSHavokManImp*> mModuleInfoMap = {};
-	
-	void init(std::string& gamePath)
+
+	bool init(const std::string& gamePath)
 	{
 		DWORD64 baseAddress = Pattern::BaseAddress();
 		
 		if (baseAddress == 0)
 		{
+			std::filesystem::path game { gamePath };
+			game.replace_extension("dll");
+			const std::string dllPath = game.string();
+			const std::string dllName = game.filename().string();
+			game.remove_filename();
+			const std::string dllFolder = game.string();
+			
+			if (!std::filesystem::exists(dllPath))
+			{
+				 if (!pePatcher::ApplyPatches(gamePath, dllPath)) {
+					PLOG_ERROR << "Failed to apply patches";
+				 	return false;
+				 }
+			}
 			
 			SetCurrentDirectoryA(R"(G:\Steam\steamapps\common\ELDEN RING\Game\)");
 			SetEnvironmentVariableA("SteamAppId", "1245620");
@@ -28,11 +43,11 @@ namespace HavokFunctions {
 			if (hmodule == nullptr)
 			{
 				PLOG_ERROR << "LoadLibraryA Failed";
-				return;
+				return false;
 			}
 			PLOG_INFO << "LoadLibraryA Succeeded";
 			
-			const auto pe = PEHelper(hmodule);
+			auto pe = PEHelper(hmodule);
 			baseAddress = pe.GetBaseAddress();
 			const DWORD moduleSize = pe.GetNTHeaders()->OptionalHeader.SizeOfImage;
 			
@@ -114,6 +129,7 @@ namespace HavokFunctions {
 		TlsSetValue(havokAllocator, csHavokManImp->hkLifoAllocator);
 		
 		PLOG_INFO << "Initializing Havok Functions";
+		return true;
 	}
 
 
