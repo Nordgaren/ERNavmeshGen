@@ -36,7 +36,7 @@ namespace HavokFunctions {
 				 }
 			}
 			
-			SetCurrentDirectoryA(R"(G:\Steam\steamapps\common\ELDEN RING\Game\)");
+			SetCurrentDirectoryA(dllFolder.c_str());
 			SetEnvironmentVariableA("SteamAppId", "1245620");
 		
 			const HMODULE hmodule = LoadLibraryA(dllPath.c_str());
