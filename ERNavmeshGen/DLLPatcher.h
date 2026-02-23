@@ -175,6 +175,9 @@ namespace pePatcher
         patcher.Load(inPath);
 
         PIMAGE_NT_HEADERS64 ntHeaders = patcher.ntHeaders;
+        
+        // Add IMAGE_FILE_DLL to Characteristics
+        ntHeaders->FileHeader.Characteristics |= IMAGE_FILE_DLL;
 
         uint64_t imageBase = ntHeaders->OptionalHeader.ImageBase;
         uint32_t entryPointRva = ntHeaders->OptionalHeader.AddressOfEntryPoint;

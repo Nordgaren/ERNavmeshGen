@@ -39,7 +39,7 @@ namespace HavokFunctions {
 			SetCurrentDirectoryA(R"(G:\Steam\steamapps\common\ELDEN RING\Game\)");
 			SetEnvironmentVariableA("SteamAppId", "1245620");
 		
-			const HMODULE hmodule = LoadLibraryA(gamePath.c_str());
+			const HMODULE hmodule = LoadLibraryA(dllPath.c_str());
 			if (hmodule == nullptr)
 			{
 				PLOG_ERROR << "LoadLibraryA Failed";
