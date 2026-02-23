@@ -12,7 +12,7 @@
 bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& compendiumPathIn)
 {
 	std::unique_ptr<hkSerialize::Load> load = Havok::getLoader();
-	if (compendiumPathIn.length() != 0 && Havok::loadCompendium(load.get(), compendiumPathIn) == HK_SUCCESS)
+	if (!compendiumPathIn.empty() && Havok::loadCompendium(load.get(), compendiumPathIn) == HK_SUCCESS)
 	{
 		PLOG_VERBOSE << "Loaded compendium from " << compendiumPathIn;
 	}

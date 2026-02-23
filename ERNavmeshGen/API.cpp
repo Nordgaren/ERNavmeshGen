@@ -31,7 +31,7 @@ NAVMA_API bool GenerateNavMeshFromCollisionAPI(const char* path, const char* com
     std::string colPath = path;
     std::string compendium = compendiumPath ? compendiumPath : "";
 	PLOG_INFO << "Generating navmesh from: " << colPath;
-    if (!GenerateNavMeshFromCollision(colPath, compendiumPath))
+    if (!GenerateNavMeshFromCollision(colPath, compendium))
     {
         PLOG_INFO << "Navmesh failed to generate from" << colPath;
         return false;
@@ -59,7 +59,7 @@ static bool BatchGenerateNavMeshFromCollision(const std::string& folder, const c
         if (ends_with(file, ".hkx")) {
             PLOG_INFO << "Generating navmesh from: " << file;
             // Sleep(5000);
-             if (!GenerateNavMeshFromCollision(file, compendiumPath)) {
+             if (!GenerateNavMeshFromCollision(file, compendium)) {
                  PLOG_INFO << "Navmesh failed to generate from" << file;
                  return false;
              }
