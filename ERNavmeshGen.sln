@@ -6,6 +6,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ERNavmeshGenTests", "ERNavm
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PELoader", "PELoader\PELoader.vcxproj", "{ECA04B54-BF24-41A3-8C13-B6761F6C6713}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERNavmeshGenCS", "ERNavmeshGenCS\ERNavmeshGenCS.csproj", "{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -38,5 +40,13 @@ Global
 		{ECA04B54-BF24-41A3-8C13-B6761F6C6713}.Release|Win32.Build.0 = Release|Win32
 		{ECA04B54-BF24-41A3-8C13-B6761F6C6713}.Release|x64.ActiveCfg = Release|x64
 		{ECA04B54-BF24-41A3-8C13-B6761F6C6713}.Release|x64.Build.0 = Release|x64
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Debug|Win32.Build.0 = Debug|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Debug|x64.Build.0 = Debug|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Release|Win32.ActiveCfg = Release|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Release|Win32.Build.0 = Release|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Release|x64.ActiveCfg = Release|Any CPU
+		{BCAECAE1-F159-4C7E-B1DE-D5C1BEB30644}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -58,7 +58,6 @@ static bool BatchGenerateNavMeshFromCollision(const std::string& folder, const c
     for (std::string file : fileIO::GetAllFilesInFolder(folder)) {
         if (ends_with(file, ".hkx")) {
             PLOG_INFO << "Generating navmesh from: " << file;
-            // Sleep(5000);
              if (!GenerateNavMeshFromCollision(file, compendium)) {
                  PLOG_INFO << "Navmesh failed to generate from" << file;
                  return false;
