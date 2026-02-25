@@ -14,6 +14,21 @@
 namespace HavokFunctions {
 	// Need this later for multi-threading possibly. Will need to de-allocate when we unload. Possibly when we exit thread.
 	static std::list<CSHavokMan::CSHavokManImp*> mModuleInfoMap = {};
+	
+	static HMODULE gameHandle = nullptr;
+	
+	bool denit()
+	{
+		if (gameHandle == nullptr)
+		{
+			return true;
+		}
+		
+		HMODULE handle = gameHandle;
+		gameHandle = nullptr;
+		return FreeLibrary(handle);
+		
+	}
 
 	bool init(const std::string& gamePath)
 	{
@@ -45,6 +60,8 @@ namespace HavokFunctions {
 				PLOG_ERROR << "LoadLibraryA Failed";
 				return false;
 			}
+			
+			gameHandle = hmodule;
 			PLOG_INFO << "LoadLibraryA Succeeded";
 			
 			auto pe = PEHelper(hmodule);

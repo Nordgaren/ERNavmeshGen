@@ -5,14 +5,18 @@
 #include "export.h"
 #include <string>
 
+#include "HavokFunctions.h"
 #include "NavGen.h"
 #include "Util/fileio.h"
 
 static std::string gamePath = "";
 
-void SetGamePath(const char* path)
+
+
+bool SetGamePath(const char* path)
 {
     gamePath = path;
+    return true;
 }
 
 NAVMA_API bool GenerateNavMeshFromCollisionAPI(const char* path, const char* compendiumPath)
@@ -80,6 +84,12 @@ bool BatchGenerateNavMeshFromCollisionAPI(const char* folder, const char* compen
     std::string folderPath = folder;
     BatchGenerateNavMeshFromCollision(folderPath, compendiumPath);
 
+    return true;
+}
+
+bool Close()
+{
+    HavokFunctions::denit();
     return true;
 }
 

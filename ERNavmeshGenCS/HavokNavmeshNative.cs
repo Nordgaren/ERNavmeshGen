@@ -12,11 +12,13 @@ public enum HavokOutputType {
 
 public class HavokNavmeshNative {
     
-    [DllImport("ERNavmeshGen.dll")]
-    public static extern bool SetGameLocation([MarshalAs (UnmanagedType.LPStr)] string path);
-    [DllImport("ERNavmeshGen.dll")]
-    public static extern bool BatchGenerateNavMeshFromCollisionAPI([MarshalAs (UnmanagedType.LPStr)] string  path, [MarshalAs (UnmanagedType.LPStr)] string compendiumPath);
-    [DllImport("ERNavmeshGen.dll")]
-    public static extern bool GenerateNavMeshFromCollisionAPI([MarshalAs (UnmanagedType.LPStr)] string folder, [MarshalAs (UnmanagedType.LPStr)] string compendiumPath);
+    [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool SetGamePath([MarshalAs (UnmanagedType.LPStr)] string path);
+    [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool BatchGenerateNavMeshFromCollisionAPI([MarshalAs (UnmanagedType.LPStr)] string folder, [MarshalAs (UnmanagedType.LPStr)] string compendiumPath);
+    [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool GenerateNavMeshFromCollisionAPI([MarshalAs (UnmanagedType.LPStr)] string path, [MarshalAs (UnmanagedType.LPStr)] string compendiumPath);
+    [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool Close();
     
 }

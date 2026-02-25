@@ -5,6 +5,7 @@
 #include "Pattern.h"
 
 namespace HavokFunctions {
+	bool denit();
 	bool init(const std::string& gamePath);
 
 	namespace hkReferencedObject {
