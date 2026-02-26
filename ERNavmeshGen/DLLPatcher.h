@@ -270,7 +270,7 @@ namespace pePatcher
 
     static bool AbortInitAtCSWindow(PEPatcher& patcher, uint32_t initEngineRva)
     {
-        PLOG_INFO << "[***] Processing Engine Init (Aborting at CSWindow) [***]";
+        PLOG_INFO << "Processing Engine Init (Aborting at CSWindow)";
 
         InstructionCursor cursor(patcher.buffer, patcher.imageBase, initEngineRva);
 
@@ -303,7 +303,7 @@ namespace pePatcher
                 }
             }
 
-            // --- 2. Track the Patch Location ---
+            // Track the Patch Location ---
             // Look for: MOV EAX, [WINDOW_HEIGHT]
             if (patchLocationRva == 0 &&
                 cursor.instr.mnemonic == ZYDIS_MNEMONIC_MOV &&
@@ -360,6 +360,87 @@ namespace pePatcher
         patcher.buffer[fileOffset + 1] = 0x90;
 
         PLOG_INFO << "[+] Init Engine successfully aborted at CSWindow!";
+        return true;
+    }
+
+
+    static bool PatchMutexCheck(PEPatcher& patcher, uint32_t winMainRva)
+    {
+        PLOG_INFO << "Processing Mutex Check Bypass";
+
+        InstructionCursor cursor(patcher.buffer, patcher.imageBase, winMainRva);
+        uint32_t targetFuncRva = 0;
+
+        // In x64 Windows, wide strings (L"") are UTF-16LE (2 bytes per character).
+        // We define the byte pattern for "Global\SekiroMutex" to search for.
+        const uint8_t mutexStr[] = {
+            'G', 0, 'l', 0, 'o', 0, 'b', 0, 'a', 0, 'l', 0, '\\', 0,
+            'S', 0, 'e', 0, 'k', 0, 'i', 0, 'r', 0, 'o', 0, 'M', 0, 'u', 0, 't', 0, 'e', 0, 'x', 0
+        };
+
+        PLOG_INFO << "[*] Scanning WinMain for Mutex Initialization...";
+
+        // Scan the first 20 instructions of WinMain to find its startup calls
+        for (int i = 0; i < 20; ++i)
+        {
+            if (!cursor.Next()) break;
+
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
+            {
+                uint32_t callTargetRva = cursor.GetAbsoluteAddress(0) - patcher.imageBase;
+
+                // Drop a temporary cursor into the called function
+                InstructionCursor targetCursor(patcher.buffer, patcher.imageBase, callTargetRva);
+
+                // Scan the first 30 instructions of this target function
+                for (int j = 0; j < 30; ++j)
+                {
+                    if (!targetCursor.Next()) break;
+
+                    // Look for LEA RCX, [RIP + disp] (Loading a string pointer)
+                    if (targetCursor.instr.mnemonic == ZYDIS_MNEMONIC_LEA &&
+                        targetCursor.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY &&
+                        targetCursor.operands[1].mem.base == ZYDIS_REGISTER_RIP)
+                    {
+                        // Calculate exactly where this string lives in the file
+                        uint32_t strRva = targetCursor.GetAbsoluteAddress(1) - patcher.imageBase;
+                        uint32_t strOffset = patcher.RvaToFileOffset(strRva);
+
+                        // Verify the string matches "Global\SekiroMutex"
+                        if (strOffset > 0 && strOffset + sizeof(mutexStr) <= patcher.buffer.size())
+                        {
+                            if (memcmp(&patcher.buffer[strOffset], mutexStr, sizeof(mutexStr)) == 0)
+                            {
+                                targetFuncRva = callTargetRva; // We found the Mutex function!
+                                break;
+                            }
+                        }
+                    }
+
+                    // Don't scan past the end of small functions
+                    if (targetCursor.instr.mnemonic == ZYDIS_MNEMONIC_RET) break;
+                }
+            }
+
+            if (targetFuncRva != 0) break; // Found it, stop scanning WinMain
+        }
+
+        if (targetFuncRva == 0)
+        {
+            PLOG_ERROR << "[-] Failed to locate IsGameAlreadyOpen via mutex string.";
+            return false;
+        }
+
+        PLOG_INFO << "[+] Found IsGameAlreadyOpen at RVA: 0x" << std::hex << targetFuncRva;
+
+        // We want the function to immediately return TRUE (AL = 1).
+        // In x64, 'mov eax, 1' zero-extends to RAX, setting AL to 1.
+        std::string asmCode = "mov eax, 1; ret;";
+        PLOG_INFO << "[*] Patching IsGameAlreadyOpen: " << asmCode;
+
+        patcher.WritePatch(targetFuncRva, asmCode);
+
+        PLOG_INFO << "[+] Mutex check successfully neutralized!";
         return true;
     }
 
@@ -438,7 +519,7 @@ namespace pePatcher
         // Extract WinMain's RVA and drop a NEW cursor inside WinMain
         uint32_t winMainRva = cursor.GetAbsoluteAddress(0) - imageBase;
         PLOG_INFO << "[+] Found WinMain at RVA: 0x" << std::hex << winMainRva;
-
+        
         InstructionCursor winMainCursor(peBuffer, imageBase, winMainRva);
         PrologueContext winMainCtx = PrologueContext::AnalyzePrologue(winMainCursor);
         uint32_t winMainEpilogueRva = PrologueContext::FindDynamicEpilogue(winMainCursor, winMainCtx);
@@ -538,16 +619,24 @@ namespace pePatcher
         }
 
         uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;
+        
+        if (!PatchMutexCheck(patcher, winMainRva))
+        {
+            PLOG_ERROR << "[-] Failed to patch Mutex in WinMain patch.";
+            return false;
+        }
+        
+        
         if (!AbortInitAtCSWindow(patcher, initEngineRva))
+        {
+            PLOG_ERROR << "[-] Failed to bypass CSWindow init in init engine.";
+            return false;
+        }
+        if (!InitFunctionBypasses(patcher, initEngineRva))
         {
             PLOG_ERROR << "[-] Failed to bypass functions in final function patch.";
             return false;
         }
-        // if (!InitFunctionBypasses(patcher, initEngineRva))
-        // {
-        //     PLOG_ERROR << "[-] Failed to bypass functions in final function patch.";
-        //     return false;
-        // }
         //
         // if (!BypassCSWindowInit(patcher, initEngineRva))
         // {
