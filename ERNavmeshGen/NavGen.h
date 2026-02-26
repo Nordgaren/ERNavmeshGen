@@ -76,7 +76,7 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	var->addr = &container;
 	
 	std::filesystem::path pathOut { pathIn };
-	const std::string inFilename = "q" + pathOut.filename().string().substr(1);
+	const std::string inFilename = "n" + pathOut.filename().string().substr(1);
 	pathOut.replace_filename(inFilename);
 	pathOut.replace_extension("hkn");
 	// PLOG_INFO << "Saving navmesh file to " << pathOut;

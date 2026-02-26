@@ -1,6 +1,6 @@
 #pragma once
 #include <plog/Log.h>
-#include "Util/pePatcher.h"
+#include "Util/PEPatcher.h"
 
 namespace pePatcher
 {
@@ -169,13 +169,112 @@ namespace pePatcher
         return patcher.WritePatch(patchLocationRva, asmCode);
     }
 
+    static bool BypassCSWindowInit(PEPatcher& patcher, uint32_t initEngineRva)
+    {
+        PLOG_INFO << "[***] Processing Engine Init (Bypassing CSWindow) [***]";
+
+        InstructionCursor cursor(patcher.buffer, patcher.imageBase, initEngineRva);
+
+        uint32_t patchLocationRva = 0;
+        uint32_t landingZoneRva = 0;
+
+        PLOG_INFO << "[*] Scanning for CSWindow init block...";
+
+        while (cursor.Next())
+        {
+            // 1. Look for: MOV EAX, [mem] (Fetching WINDOW_HEIGHT)
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_MOV &&
+                cursor.operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER &&
+                cursor.operands[0].reg.value == ZYDIS_REGISTER_EAX &&
+                cursor.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY)
+            {
+                // 2. Peek 1: MOV [mem], EAX (Saving to stack)
+                InstructionCursor peek1 = cursor.Peek();
+                if (peek1.instr.mnemonic == ZYDIS_MNEMONIC_MOV &&
+                    peek1.operands[0].type == ZYDIS_OPERAND_TYPE_MEMORY &&
+                    peek1.operands[1].type == ZYDIS_OPERAND_TYPE_REGISTER &&
+                    peek1.operands[1].reg.value == ZYDIS_REGISTER_EAX)
+                {
+                    // 3. Peek 2: MOV RAX, [mem] (Fetching INS_CSWindowImp) -> THIS IS OUR PATCH LOCATION!
+                    InstructionCursor peek2 = peek1.Peek();
+                    if (peek2.instr.mnemonic == ZYDIS_MNEMONIC_MOV &&
+                        peek2.operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER &&
+                        peek2.operands[0].reg.value == ZYDIS_REGISTER_RAX &&
+                        peek2.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY)
+                    {
+                        // 4. Peek 3: TEST RAX, RAX
+                        InstructionCursor peek3 = peek2.Peek();
+                        if (peek3.instr.mnemonic == ZYDIS_MNEMONIC_TEST &&
+                            peek3.operands[0].reg.value == ZYDIS_REGISTER_RAX)
+                        {
+                            // 5. Peek 4: JNZ (The jump to the post-init block)
+                            InstructionCursor peek4 = peek3.Peek();
+                            if (peek4.instr.mnemonic == ZYDIS_MNEMONIC_JNZ)
+                            {
+                                patchLocationRva = peek2.rva; // We will overwrite the MOV RAX instruction
+
+                                // Extract where the original code skips to if the window already exists
+                                uint32_t postInitRva = peek4.GetAbsoluteAddress(0) - patcher.imageBase;
+
+                                PLOG_INFO << "[+] Found CSWindow block at RVA: 0x" << std::hex << patchLocationRva;
+                                PLOG_INFO << "[*] Original Post-Init lands at RVA: 0x" << postInitRva;
+
+                                // --- Find the Safe Landing Zone ---
+                                // Drop a cursor at the post-init, and step past the CALL
+                                InstructionCursor landingCursor(patcher.buffer, patcher.imageBase, postInitRva);
+                                while (landingCursor.Next())
+                                {
+                                    if (landingCursor.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
+                                    {
+                                        landingCursor.Next(); // Step past the CALL instruction
+                                        landingZoneRva = landingCursor.rva; // This is the safe zone!
+                                        break;
+                                    }
+                                }
+                                break; // We found everything, get out of the main loop
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3) break; // Safety net
+        }
+
+        if (patchLocationRva == 0 || landingZoneRva == 0)
+        {
+            PLOG_ERROR << "[-] Failed to find the CSWindow initialization block or landing zone.";
+            return false;
+        }
+
+        PLOG_INFO << "[+] Calculated Safe Landing Zone at RVA: 0x" << std::hex << landingZoneRva;
+
+        // --- Inject the Bypass ---
+        uint64_t absoluteLandingTarget = patcher.imageBase + landingZoneRva;
+
+        std::stringstream asmStream;
+        asmStream << "jmp 0x" << std::hex << absoluteLandingTarget;
+
+        PLOG_INFO << "[*] Patching CSWindow: " << asmStream.str();
+        patcher.WritePatch(patchLocationRva, asmStream.str());
+
+        // Optional: Pad the remaining 2 bytes of the original 7-byte MOV instruction with NOPs 
+        // so disassemblers like Ghidra/IDA don't get confused by the dead code fracture.
+        uint32_t fileOffset = patcher.RvaToFileOffset(patchLocationRva + 5); // jmp rel32 is 5 bytes
+        patcher.buffer[fileOffset] = 0x90;
+        patcher.buffer[fileOffset + 1] = 0x90;
+
+        PLOG_INFO << "[+] CSWindow Init successfully bypassed!";
+        return true;
+    }
+
     static bool ApplyPatches(const std::string& inPath, const std::string& outPath)
     {
         PEPatcher patcher = PEPatcher();
         patcher.Load(inPath);
 
         PIMAGE_NT_HEADERS64 ntHeaders = patcher.ntHeaders;
-        
+
         // Add IMAGE_FILE_DLL to Characteristics
         ntHeaders->FileHeader.Characteristics |= IMAGE_FILE_DLL;
 
@@ -343,11 +442,16 @@ namespace pePatcher
             return false;
         }
 
-        uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;;
+        uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;
         if (!InitFunctionBypasses(patcher, initEngineRva))
         {
             PLOG_ERROR << "[-] Failed to bypass functions in final function patch.";
             return false;
+        }
+
+        if (!BypassCSWindowInit(patcher, initEngineRva))
+        {
+            PLOG_ERROR << "[-] Failed to bypass CS window init.";
         }
 
         if (!InjectDllMainStub(patcher))

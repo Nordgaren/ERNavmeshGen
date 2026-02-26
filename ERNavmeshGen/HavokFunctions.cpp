@@ -9,7 +9,7 @@
 #include "DLLPatcher.h"
 #include "Havok.h"
 #include "Util/HookUtil.h"
-#include "Util/pePatcher.h"
+#include "Util/PEPatcher.h"
 
 namespace HavokFunctions {
 	// Need this later for multi-threading possibly. Will need to de-allocate when we unload. Possibly when we exit thread.
