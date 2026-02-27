@@ -51,18 +51,41 @@ namespace HavokFunctions {
 				 }
 			}
 			
-			SetCurrentDirectoryA(dllFolder.c_str());
-			SetEnvironmentVariableA("SteamAppId", "1245620");
+			// char origPath[MAX_PATH] = {};
+			// if (!GetCurrentDirectoryA(MAX_PATH, origPath))
+			// {
+			// 	PLOG_ERROR << "Failed to get current working directory";
+			// 	return false;
+			// }
+			
+			if (!SetDllDirectoryA(dllFolder.c_str()))
+			{
+				PLOG_ERROR << "Failed to set current working directory";
+				return false;
+			}
+			if (!SetEnvironmentVariableA("SteamAppId", "1245620"))
+			{
+				PLOG_ERROR << "Failed to set SteamAppId";
+				return false;
+			}
 		
+			PLOG_INFO << "DLL Path: " << dllPath;
+			PLOG_INFO << "DLL Folder: " << dllFolder;
 			const HMODULE hmodule = LoadLibraryA(dllPath.c_str());
 			if (hmodule == nullptr)
 			{
-				PLOG_ERROR << "LoadLibraryA Failed";
+				PLOG_ERROR << "LoadLibraryA Failed GLE: " << GetLastError();
 				return false;
 			}
 			
 			gameHandle = hmodule;
 			PLOG_INFO << "LoadLibraryA Succeeded";
+			
+			// if (!SetCurrentDirectoryA(origPath))
+			// {
+			// 	PLOG_ERROR << "Failed to restore current working directory";
+			// 	return false;
+			// }
 			
 			auto pe = PEHelper(hmodule);
 			baseAddress = pe.GetBaseAddress();
@@ -124,28 +147,29 @@ namespace HavokFunctions {
 			
 			
 			PLOG_INFO << "Initializing CSHavokManImp";
+			
+			// Leaving these here because we could possibly enable logging with this
+			// DWORD havokLogger = *HavokFunctions::CSHavokMan::HavokLogger;
+			// Need to figure out how to actually initialize the logger.
+			// void* alloc = malloc(0x30);
+			// IDK I got this from the constructor I think. Figure out what functions to call instead of manually creating
+			// If that's not possible we just need to re-implement the API and handle it ourselves with PLOG or smth.
+			// int* end = reinterpret_cast<int*>(static_cast<char*>(alloc) + 0x24);
+			// *end = -1;
+			// TlsSetValue(havokLogger, alloc);
+		
+			// This is the allocator that makes things work. For the navgen to not crash on it's own thread, this TLS value
+			// needs to be set.
+			DWORD havokAllocator = *CSHavokMan::havokAllocatorTLSValue;
+		
+			// Get the CSHavokManImp instance and set the allocator (which happens to be the first member pointer) to the 
+			// TLS value.
+			TlsSetValue(havokAllocator, csHavokManImp->hkLifoAllocator);
+		
+			PLOG_INFO << "Initializing Havok Functions";
 		}
 		
-		// Leaving these here because we could possibly enable logging with this
-		// DWORD havokLogger = *HavokFunctions::CSHavokMan::HavokLogger;
-		// Need to figure out how to actually initialize the logger.
-		// void* alloc = malloc(0x30);
-		// IDK I got this from the constructor I think. Figure out what functions to call instead of manually creating
-		// If that's not possible we just need to re-implement the API and handle it ourselves with PLOG or smth.
-		// int* end = reinterpret_cast<int*>(static_cast<char*>(alloc) + 0x24);
-		// *end = -1;
-		// TlsSetValue(havokLogger, alloc);
-		
-		// This is the allocator that makes things work. For the navgen to not crash on it's own thread, this TLS value
-		// needs to be set.
-		DWORD havokAllocator = *CSHavokMan::havokAllocatorTLSValue;
-		
-		// Get the CSHavokManImp instance and set the allocator (which happens to be the first member pointer) to the 
-		// TLS value.
-		CSHavokMan::CSHavokManImp* csHavokManImp = *CSHavokMan::csHavokManImpPtr;
-		TlsSetValue(havokAllocator, csHavokManImp->hkLifoAllocator);
-		
-		PLOG_INFO << "Initializing Havok Functions";
+
 		return true;
 	}
 

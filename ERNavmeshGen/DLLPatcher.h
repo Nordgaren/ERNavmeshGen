@@ -268,45 +268,55 @@ namespace pePatcher
         return true;
     }
 
-    static bool AbortInitAtCSWindow(PEPatcher& patcher, uint32_t initEngineRva)
+    static uint32_t FindCookieEpilogue(InstructionCursor cursor)
     {
-        PLOG_INFO << "Processing Engine Init (Aborting at CSWindow)";
-
-        InstructionCursor cursor(patcher.buffer, patcher.imageBase, initEngineRva);
-
-        uint32_t patchLocationRva = 0;
-        uint32_t epilogueRva = 0;
-        uint32_t lastMovRva = 0; // Tracks the instruction immediately preceding the XOR
-
-        PLOG_INFO << "[*] Scanning for CSWindow block and Epilogue...";
+        uint32_t lastMovRva = 0;
 
         while (cursor.Next())
         {
-            // --- 1. Track the Epilogue ---
-            // The epilogue starts with `MOV RCX, [RBP+0xD0]` right before the cookie check
+            // Track the instruction right before the cookie check (usually MOV RCX, [RBP+...])
             if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_MOV)
             {
                 lastMovRva = cursor.rva;
             }
 
-            // Look for: XOR RCX, RSP followed by CALL (The Stack Cookie Check)
-            if (epilogueRva == 0 &&
-                cursor.instr.mnemonic == ZYDIS_MNEMONIC_XOR &&
+            // Signature: XOR RCX, RSP
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_XOR &&
                 cursor.operands[0].reg.value == ZYDIS_REGISTER_RCX &&
                 cursor.operands[1].reg.value == ZYDIS_REGISTER_RSP)
             {
                 InstructionCursor peek = cursor.Peek();
                 if (peek.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
                 {
-                    // We found the end of the function! The epilogue starts at the last MOV.
-                    epilogueRva = lastMovRva;
+                    // Return the RVA of the MOV right before the XOR
+                    return lastMovRva;
                 }
             }
 
-            // Track the Patch Location ---
-            // Look for: MOV EAX, [WINDOW_HEIGHT]
-            if (patchLocationRva == 0 &&
-                cursor.instr.mnemonic == ZYDIS_MNEMONIC_MOV &&
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3) break;
+        }
+        return 0; // Not found
+    }
+
+    static bool AbortInitAtCSWindow(PEPatcher& patcher, uint32_t initEngineRva)
+    {
+        PLOG_INFO << "Processing Engine Init (Aborting at CSWindow)";
+
+        InstructionCursor cursor(patcher.buffer, patcher.imageBase, initEngineRva);
+
+        uint32_t epilogueRva = FindCookieEpilogue(cursor);
+        if (epilogueRva == 0)
+        {
+            PLOG_ERROR << "[-] Failed to find InitEngine Cookie Epilogue.";
+            return false;
+        }
+
+        PLOG_INFO << "[*] Scanning for CSWindow block...";
+
+        // Now we only need to scan for the CSWindow signature
+        while (cursor.Next())
+        {
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_MOV &&
                 cursor.operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER &&
                 cursor.operands[0].reg.value == ZYDIS_REGISTER_EAX &&
                 cursor.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY)
@@ -325,42 +335,30 @@ namespace pePatcher
                         peek2.operands[0].reg.value == ZYDIS_REGISTER_RAX &&
                         peek2.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY)
                     {
-                        patchLocationRva = peek2.rva;
+                        cursor.SetRVA(peek2.rva); // Found it!
+                        break;
                     }
                 }
             }
-
-            // If we found both, we can stop scanning
-            if (patchLocationRva != 0 && epilogueRva != 0) break;
-
-            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3) break; // Safety net
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3) {
+                PLOG_ERROR << "[-] Failed to find the CSWindow block.";
+                return false;
+            };
         }
 
-        if (patchLocationRva == 0 || epilogueRva == 0)
-        {
-            PLOG_ERROR << "[-] Failed to find the CSWindow block or the Epilogue.";
-            return false;
-        }
+        InjectBypassJump(patcher, cursor, epilogueRva);
 
-        PLOG_INFO << "[+] Found CSWindow Patch Location at RVA: 0x" << std::hex << patchLocationRva;
-        PLOG_INFO << "[+] Found Function Epilogue at RVA: 0x" << epilogueRva;
-
-        // --- 3. Inject the Abort JMP ---
-        uint64_t absoluteEpilogueTarget = patcher.imageBase + epilogueRva;
-
-        std::stringstream asmStream;
-        asmStream << "jmp 0x" << std::hex << absoluteEpilogueTarget;
-
-        PLOG_INFO << "[*] Compiling Abort Patch: " << asmStream.str();
-        patcher.WritePatch(patchLocationRva, asmStream.str());
-
-        // Clean up the fractured bytes of the 7-byte MOV instruction
-        uint32_t fileOffset = patcher.RvaToFileOffset(patchLocationRva + 5);
-        patcher.buffer[fileOffset] = 0x90;
-        patcher.buffer[fileOffset + 1] = 0x90;
+        // std::stringstream asmStream;
+        // asmStream << "jmp 0x" << std::hex << absoluteEpilogueTarget;
+        //
+        // patcher.WritePatch(patchLocationRva, asmStream.str());
+        //
+        // // Pad the remaining 2 bytes of the fractured MOV
+        // uint32_t fileOffset = patcher.RvaToFileOffset(patchLocationRva + 5);
+        // patcher.buffer[fileOffset] = 0x90;
+        // patcher.buffer[fileOffset + 1] = 0x90;
 
         PLOG_INFO << "[+] Init Engine successfully aborted at CSWindow!";
-        return true;
     }
 
 
@@ -519,7 +517,7 @@ namespace pePatcher
         // Extract WinMain's RVA and drop a NEW cursor inside WinMain
         uint32_t winMainRva = cursor.GetAbsoluteAddress(0) - imageBase;
         PLOG_INFO << "[+] Found WinMain at RVA: 0x" << std::hex << winMainRva;
-        
+
         InstructionCursor winMainCursor(peBuffer, imageBase, winMainRva);
         PrologueContext winMainCtx = PrologueContext::AnalyzePrologue(winMainCursor);
         uint32_t winMainEpilogueRva = PrologueContext::FindDynamicEpilogue(winMainCursor, winMainCtx);
@@ -619,14 +617,14 @@ namespace pePatcher
         }
 
         uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;
-        
+
         if (!PatchMutexCheck(patcher, winMainRva))
         {
             PLOG_ERROR << "[-] Failed to patch Mutex in WinMain patch.";
             return false;
         }
-        
-        
+
+
         if (!AbortInitAtCSWindow(patcher, initEngineRva))
         {
             PLOG_ERROR << "[-] Failed to bypass CSWindow init in init engine.";

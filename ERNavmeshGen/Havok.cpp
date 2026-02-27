@@ -15,11 +15,13 @@ bool Havok::init(std::string& gamePath)
     return HavokFunctions::init(gamePath);
 }
 
-std::unique_ptr<hkSerialize::Load> Havok::getLoader()
+hkSerialize::Load* Havok::getLoader()
 {
     std::unique_ptr<hkSerialize::Load> load = std::make_unique<hkSerialize::Load>();
-    HavokFunctions::hkSerialize::Load::constructor(load.get());
-    return load;
+    hkSerialize::Load* rawPtr = load.release();
+    HavokFunctions::hkSerialize::Load::constructor(rawPtr);
+    //keepAliveLoad.push_back(std::move(load));
+    return rawPtr;
 }
 
 hkResult Havok::loadCompendium(hkSerialize::Load* loader, const std::string& path)
@@ -33,15 +35,17 @@ hkResult Havok::loadCompendium(hkSerialize::Load* loader, const std::string& pat
     return result;
 }
 
-std::unique_ptr<hkReflect::Var> Havok::load(hkSerialize::Load* loader, const std::string& path)
+hkReflect::Var* Havok::load(hkSerialize::Load* loader, const std::string& path)
 {
     hkIo::Detail::ReadBufferAdapter readBufferAdapter{};
     readBufferAdapter.impl = HavokFunctions::hkIo::Detail::createReaderImpl(path.c_str());
 
 
     std::unique_ptr<hkReflect::Var> var = std::make_unique<hkReflect::Var>();
-    HavokFunctions::hkSerialize::Load::toVar(loader, var.get(), &readBufferAdapter, nullptr);
-    return var;
+    hkReflect::Var* rawPtr = var.release();
+    HavokFunctions::hkSerialize::Load::toVar(loader, rawPtr, &readBufferAdapter, nullptr);
+    // keepAliveVar.push_back(std::move(var));
+    return rawPtr;
 }
 
 hkResult Havok::save(hkReflect::Var* var, const std::string& path)
@@ -82,17 +86,19 @@ hkResult* Havok::getGeometryFromShape(hknpShape* shape, hkGeometry* geomOut)
     return HavokFunctions::hknpShape::buildSurfaceGeometry(shape, &buildGeomResult, &config, geomOut, nullptr);
 }
 
-std::unique_ptr<hkaiNavMesh> Havok::generateNavMesh(hkaiNavMeshGenerationSnapshot* snapshot)
+hkaiNavMesh* Havok::generateNavMesh(hkaiNavMeshGenerationSnapshot* snapshot)
 {
     std::unique_ptr<hkaiNavMesh> navMesh = std::make_unique<hkaiNavMesh>();
-    HavokFunctions::hkaiNavMesh::constructor(navMesh.get());
+    hkaiNavMesh* rawPtr = navMesh.release();
+    HavokFunctions::hkaiNavMesh::constructor(rawPtr);
 
     hkaiNavMeshGenerationOutputs outputs{};
 
-    outputs.navMesh = navMesh.get();
+    outputs.navMesh = rawPtr;
     HavokFunctions::hkaiNavMeshGenerationUtils::generateNavMesh(&snapshot->settings, snapshot, &outputs, nullptr,
                                                                 nullptr);
-    return navMesh;
+    // keepAliveNavMesh.push_back(std::move(navMesh));
+    return rawPtr;
 }
 
 void Havok::getDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings& settings)
@@ -122,7 +128,7 @@ hkResult Havok::addAction(hknpActionManager* actionManager, hknpAction* action)
     HavokFunctions::hknpAction::getBodies(action, &bodyIds, &numBodies);
     if (actionManager->bodies.storage.numBits / 32 < bodyIds[numBodies].getIndex())
     {
-        PLOG_ERROR << "Body bitfield too small, expansion not implemented";
+        // PLOG_ERROR << "Body bitfield too small, expansion not implemented";
         return HK_E_NOT_IMPLEMENTED;
     }
 

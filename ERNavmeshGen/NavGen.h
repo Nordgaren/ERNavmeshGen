@@ -9,17 +9,21 @@
 #include <filesystem>
 
 
-bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& compendiumPathIn)
+// std::vector<std::unique_ptr<hkaiNavMesh>> keepAliveNavMesh;
+// std::vector<std::unique_ptr<hkSerialize::Load>> keepAliveLoad;
+// std::vector<std::unique_ptr<hkReflect::Var>> keepAliveVar;
+
+bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& pathOut, const std::string& compendiumPathIn)
 {
-	std::unique_ptr<hkSerialize::Load> load = Havok::getLoader();
-	if (!compendiumPathIn.empty() && Havok::loadCompendium(load.get(), compendiumPathIn) == HK_SUCCESS)
+	hkSerialize::Load* load = Havok::getLoader();
+	if (!compendiumPathIn.empty() && Havok::loadCompendium(load, compendiumPathIn) == HK_SUCCESS)
 	{
 		// PLOG_VERBOSE << "Loaded compendium from " << compendiumPathIn;
 	}
 
-	std::unique_ptr<hkReflect::Var> var = Havok::load(load.get(), pathIn);
+	hkReflect::Var* var = Havok::load(load, pathIn);
 	if (!var) return false;
-	if (var.get()->addr == nullptr)
+	if (var->addr == nullptr)
 	{
 		// Anything that is hkx that can't be loaded.
 		return true;
@@ -32,7 +36,7 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	hknpShape* shape = Havok::getCollisionShapeFromContainer((hkRootLevelContainer*)var->addr);
 	if (hkResult geomBuildResult = *Havok::getGeometryFromShape(shape, &snapshot.geometry))
 	{
-		PLOG_ERROR << "Failed to get geometry. Error code: " << geomBuildResult;
+		// PLOG_ERROR << "Failed to get geometry. Error code: " << geomBuildResult;
 		return false;
 	}
 	// PLOG_VERBOSE << "Geometry built successfully. (vertices: " << snapshot.geometry.vertices.size << " triangles: " << snapshot.geometry.triangles.size << ")";
@@ -48,11 +52,11 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	// snapshot.settings.snapshotFilename = snapshotPath.string().c_str();
 	// snapshot.settings.saveInputSnapshot = true;
 
-	std::unique_ptr<hkaiNavMesh> navMesh = Havok::generateNavMesh(&snapshot);
+	hkaiNavMesh* navMesh = Havok::generateNavMesh(&snapshot);
 	if (!navMesh) return false;
 	// PLOG_VERBOSE << "NavMesh generated successfully. (vertices: " << navMesh->vertices.size << " faces: " << navMesh->faces.size << ")";
 
-	void* queryMediator = Havok::setupNavMeshQueryMediator(navMesh.get());
+	void* queryMediator = Havok::setupNavMeshQueryMediator(navMesh);
 	if (!queryMediator) return false;
 	// PLOG_VERBOSE << "QueryMediator set up successfully.";
 
@@ -63,7 +67,7 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 		{
 			.name = "hkaiNavMesh",
 			.className = "hkaiNavMesh",
-			.variant = navMesh.get(),
+			.variant = navMesh,
 		},
 		{
 			.name = "hkaiStaticTreeNavMeshQueryMediator",
@@ -75,12 +79,9 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 
 	var->addr = &container;
 	
-	std::filesystem::path pathOut { pathIn };
-	const std::string inFilename = "n" + pathOut.filename().string().substr(1);
-	pathOut.replace_filename(inFilename);
-	pathOut.replace_extension("hkn");
+
 	// PLOG_INFO << "Saving navmesh file to " << pathOut;
-	const hkResult result = Havok::save(var.get(), pathOut.string());
+	const hkResult result = Havok::save(var, pathOut);
 
 	if (result != HK_SUCCESS)
 	{

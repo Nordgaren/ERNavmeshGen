@@ -22,4 +22,7 @@ public static class Kernel32 {
         throw new DllNotFoundException($"{Path.GetFileName(path)} not found at path {path}\n" +
             $"Last Error = {error}");
     }
+    
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    public static extern bool SetDllDirectory(string lpPathName);
 }

@@ -9,11 +9,11 @@ namespace Havok {
     void* implConstructHook(void* mem, void* typeCopier, bool isPackfile, bool deleteCopier);
     bool init(std::string& gamePath);
 
-    std::unique_ptr<hkSerialize::Load> getLoader();
+    hkSerialize::Load* getLoader();
 
     hkResult loadCompendium(hkSerialize::Load* loader, const std::string& path);
 
-    std::unique_ptr<hkReflect::Var> load(hkSerialize::Load* loader, const std::string& path);
+    hkReflect::Var* load(hkSerialize::Load* loader, const std::string& path);
 
     hkResult save(hkReflect::Var* var, const std::string& path);
 
@@ -23,7 +23,7 @@ namespace Havok {
 
     void getDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings& settings);
 
-    std::unique_ptr<hkaiNavMesh> generateNavMesh(hkaiNavMeshGenerationSnapshot* snapshot);
+    hkaiNavMesh* generateNavMesh(hkaiNavMeshGenerationSnapshot* snapshot);
 
     void* setupNavMeshQueryMediator(hkaiNavMesh* navMesh);
 
