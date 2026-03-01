@@ -13,8 +13,13 @@ LPMODULEINFO Pattern::GetModuleInfo(const wchar_t* szModule) {
 		return &mModuleInfoMap[szModule];
 	}
 	HMODULE hModule = GetModuleHandle(szModule);
-	mModuleInfoMap.emplace(std::make_pair(szModule, MODULEINFO()));
-	GetModuleInformation(hProcess, hModule, &mModuleInfoMap[szModule], sizeof(MODULEINFO));
+	MODULEINFO moduleInfo = {};
+	if (GetModuleInformation(hProcess, hModule, &moduleInfo, sizeof(MODULEINFO)) == 0) {
+		return nullptr;
+	}
+	
+	mModuleInfoMap.emplace(std::make_pair(szModule, moduleInfo));
+
 	return &mModuleInfoMap[szModule];
 }
 

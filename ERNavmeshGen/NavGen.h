@@ -18,7 +18,7 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	hkSerialize::Load* load = Havok::getLoader();
 	if (!compendiumPathIn.empty() && Havok::loadCompendium(load, compendiumPathIn) == HK_SUCCESS)
 	{
-		// PLOG_VERBOSE << "Loaded compendium from " << compendiumPathIn;
+		PLOG_VERBOSE << "Loaded compendium from " << compendiumPathIn;
 	}
 
 	hkReflect::Var* var = Havok::load(load, pathIn);
@@ -29,36 +29,36 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 		return true;
 	}
 	
-	// PLOG_VERBOSE << "Loaded collision file from " << pathIn;
+	PLOG_VERBOSE << "Loaded collision file from " << pathIn;
 
 
 	hkaiNavMeshGenerationSnapshot snapshot { };
 	hknpShape* shape = Havok::getCollisionShapeFromContainer((hkRootLevelContainer*)var->addr);
 	if (hkResult geomBuildResult = *Havok::getGeometryFromShape(shape, &snapshot.geometry))
 	{
-		// PLOG_ERROR << "Failed to get geometry. Error code: " << geomBuildResult;
+		PLOG_ERROR << "Failed to get geometry. Error code: " << geomBuildResult;
 		return false;
 	}
-	// PLOG_VERBOSE << "Geometry built successfully. (vertices: " << snapshot.geometry.vertices.size << " triangles: " << snapshot.geometry.triangles.size << ")";
+	PLOG_VERBOSE << "Geometry built successfully. (vertices: " << snapshot.geometry.vertices.size << " triangles: " << snapshot.geometry.triangles.size << ")";
 
 	Havok::getDefaultNavMeshGenerationSettings(snapshot.settings);
 	snapshot.settings.up = hkVector4(0, 1, 0, 0);
 	snapshot.settings.precalculateClearanceSeedingData = true;
 
-	// std::filesystem::path snapshotPath { pathIn };
-	// const std::string snapshotFilename = "s" + snapshotPath.filename().string().substr(1);
-	// snapshotPath.replace_filename(snapshotFilename);
-	// snapshotPath.replace_extension("hkt");
-	// snapshot.settings.snapshotFilename = snapshotPath.string().c_str();
-	// snapshot.settings.saveInputSnapshot = true;
+	std::filesystem::path snapshotPath { pathIn };
+	const std::string snapshotFilename = "s" + snapshotPath.filename().string().substr(1);
+	snapshotPath.replace_filename(snapshotFilename);
+	snapshotPath.replace_extension("hkt");
+	snapshot.settings.snapshotFilename = snapshotPath.string().c_str();
+	snapshot.settings.saveInputSnapshot = true;
 
 	hkaiNavMesh* navMesh = Havok::generateNavMesh(&snapshot);
 	if (!navMesh) return false;
-	// PLOG_VERBOSE << "NavMesh generated successfully. (vertices: " << navMesh->vertices.size << " faces: " << navMesh->faces.size << ")";
+	PLOG_VERBOSE << "NavMesh generated successfully. (vertices: " << navMesh->vertices.size << " faces: " << navMesh->faces.size << ")";
 
 	void* queryMediator = Havok::setupNavMeshQueryMediator(navMesh);
 	if (!queryMediator) return false;
-	// PLOG_VERBOSE << "QueryMediator set up successfully.";
+	PLOG_VERBOSE << "QueryMediator set up successfully.";
 
 
 	hkRootLevelContainer container = { };
@@ -80,16 +80,16 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	var->addr = &container;
 	
 
-	// PLOG_INFO << "Saving navmesh file to " << pathOut;
+	PLOG_INFO << "Saving navmesh file to " << pathOut;
 	const hkResult result = Havok::save(var, pathOut);
 
 	if (result != HK_SUCCESS)
 	{
-		// PLOG_ERROR << "Write failed with error code " << result;
+		PLOG_ERROR << "Write failed with error code " << std::hex << result;
 		return false;
 	}
 
-	// PLOG_INFO << "Saved navmesh file to " << pathOut;
+	PLOG_INFO << "Saved navmesh file to " << pathOut;
 	return true;
 }
 

@@ -15,24 +15,27 @@ namespace HavokFunctions {
 	// Need this later for multi-threading possibly. Will need to de-allocate when we unload. Possibly when we exit thread.
 	static std::list<CSHavokMan::CSHavokManImp*> mModuleInfoMap = {};
 	
-	static HMODULE gameHandle = nullptr;
+	static uintptr_t getGameBaseAddress()
+	{
+		return Pattern::BaseAddress(L"eldenring.exe");
+	}
 	
 	bool denit()
 	{
-		if (gameHandle == nullptr)
+		uintptr_t gameHandle = getGameBaseAddress();
+		if (gameHandle == 0)
 		{
 			return true;
 		}
 		
-		HMODULE handle = gameHandle;
-		gameHandle = nullptr;
-		return FreeLibrary(handle);
+		uintptr_t handle = gameHandle;
+		return FreeLibrary(reinterpret_cast<HMODULE>(handle));
 		
 	}
 
 	bool init(const std::string& gamePath)
 	{
-		DWORD64 baseAddress = Pattern::BaseAddress();
+		uintptr_t baseAddress = getGameBaseAddress();
 		
 		if (baseAddress == 0)
 		{
@@ -45,18 +48,11 @@ namespace HavokFunctions {
 			
 			if (!std::filesystem::exists(dllPath))
 			{
-				 if (!pePatcher::ApplyPatches(gamePath, dllPath)) {
+				if (!pePatcher::ApplyPatches(gamePath, dllPath)) {
 					PLOG_ERROR << "Failed to apply patches";
-				 	return false;
-				 }
+					return false;
+				}
 			}
-			
-			// char origPath[MAX_PATH] = {};
-			// if (!GetCurrentDirectoryA(MAX_PATH, origPath))
-			// {
-			// 	PLOG_ERROR << "Failed to get current working directory";
-			// 	return false;
-			// }
 			
 			if (!SetDllDirectoryA(dllFolder.c_str()))
 			{
@@ -78,16 +74,14 @@ namespace HavokFunctions {
 				return false;
 			}
 			
-			gameHandle = hmodule;
 			PLOG_INFO << "LoadLibraryA Succeeded";
+		}
+		
+		
+		if (CSHavokMan::csHavokManImpPtr == 0) {
 			
-			// if (!SetCurrentDirectoryA(origPath))
-			// {
-			// 	PLOG_ERROR << "Failed to restore current working directory";
-			// 	return false;
-			// }
-			
-			auto pe = PEHelper(hmodule);
+			DWORD64 gameHandle = Pattern::BaseAddress(L"eldenring.exe");
+			auto pe = PEHelper(gameHandle);
 			baseAddress = pe.GetBaseAddress();
 			const DWORD moduleSize = pe.GetNTHeaders()->OptionalHeader.SizeOfImage;
 			
@@ -141,13 +135,18 @@ namespace HavokFunctions {
 			// Allocate enough memory for the actual CSHavokManImp
 			CSHavokMan::CSHavokManImp* csHavokManImp = static_cast<CSHavokMan::CSHavokManImp*>(malloc(0x218));
 			// initialize and set the pointer to our CSHavokManImp global.
+			PLOG_INFO << "Initializing CSHavokManImp";
 			*CSHavokMan::csHavokManImpPtr = CSHavokMan::constructor(csHavokManImp);
 		
 			HOOK(HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor, Havok::implConstructHook)
 			
-			
-			PLOG_INFO << "Initializing CSHavokManImp";
-			
+		}
+		
+		DWORD havokAllocator = *CSHavokMan::havokAllocatorTLSValue;
+		LPVOID val = TlsGetValue(havokAllocator);
+		PLOG_INFO << "TlsGetValue on havokAllocator: " << std::hex << val;
+		if (val == nullptr)
+		{
 			// Leaving these here because we could possibly enable logging with this
 			// DWORD havokLogger = *HavokFunctions::CSHavokMan::HavokLogger;
 			// Need to figure out how to actually initialize the logger.
@@ -161,13 +160,15 @@ namespace HavokFunctions {
 			// This is the allocator that makes things work. For the navgen to not crash on it's own thread, this TLS value
 			// needs to be set.
 			DWORD havokAllocator = *CSHavokMan::havokAllocatorTLSValue;
+			CSHavokMan::CSHavokManImp* csHavokManImp = *CSHavokMan::csHavokManImpPtr;
 		
 			// Get the CSHavokManImp instance and set the allocator (which happens to be the first member pointer) to the 
 			// TLS value.
 			TlsSetValue(havokAllocator, csHavokManImp->hkLifoAllocator);
-		
-			PLOG_INFO << "Initializing Havok Functions";
 		}
+	
+		
+		PLOG_INFO << "Initializing Havok Functions";
 		
 
 		return true;

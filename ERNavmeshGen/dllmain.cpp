@@ -9,14 +9,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-        if (AllocConsole())
-        {
-            FILE* fpstdout = stdout;
-            FILE* fpstderr = stderr;
-            freopen_s(&fpstdout,"CONOUT$", "w", stdout);
-            freopen_s(&fpstderr,"CONOUT$", "w", stderr);
-            SetWindowText(GetConsoleWindow(), L"ERNavmeshGen");
-        }
+        // if (AllocConsole())
+        // {
+        //     FILE* fpstdout = stdout;
+        //     FILE* fpstderr = stderr;
+        //     freopen_s(&fpstdout,"CONOUT$", "w", stdout);
+        //     freopen_s(&fpstderr,"CONOUT$", "w", stderr);
+        //     SetWindowText(GetConsoleWindow(), L"ERNavmeshGen");
+        // }
         plog::init(plog::verbose, R"(ERNavmeshGenLog.txt)");
         PLOG_INFO << "NavmeshGenLog.txt";
         break;

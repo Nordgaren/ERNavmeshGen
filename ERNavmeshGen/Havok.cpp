@@ -128,7 +128,7 @@ hkResult Havok::addAction(hknpActionManager* actionManager, hknpAction* action)
     HavokFunctions::hknpAction::getBodies(action, &bodyIds, &numBodies);
     if (actionManager->bodies.storage.numBits / 32 < bodyIds[numBodies].getIndex())
     {
-        // PLOG_ERROR << "Body bitfield too small, expansion not implemented";
+        PLOG_ERROR << "Body bitfield too small, expansion not implemented";
         return HK_E_NOT_IMPLEMENTED;
     }
 
