@@ -74,7 +74,7 @@ class Pattern
 public:
 	static DWORD64 defaultModule;
 	static DWORD defaultModuleSize;
-	static DWORD64 BaseAddress();
+	static DWORD64 BaseAddress(const wchar_t* szModule);
 	static LPMODULEINFO GetModuleInfo(const wchar_t* szModule);
 	static DWORD64 Scan(const wchar_t* szModule, const std::span<const int> sPattern);
 	static DWORD64 Scan(DWORD64 base, DWORD sizeOfImage, const std::span<const int> sPattern);

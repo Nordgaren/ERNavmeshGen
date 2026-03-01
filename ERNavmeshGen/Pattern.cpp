@@ -23,8 +23,21 @@ LPMODULEINFO Pattern::GetModuleInfo(const wchar_t* szModule) {
 	return &mModuleInfoMap[szModule];
 }
 
-DWORD64 Pattern::BaseAddress()
+DWORD64 Pattern::BaseAddress(const wchar_t* szModule)
 {
+	if  (defaultModule != 0)
+	{
+		return defaultModule;
+	}
+	
+	LPMODULEINFO lpmInfo = GetModuleInfo(szModule);
+	if (lpmInfo != nullptr)
+	{
+		defaultModule = (DWORD64)lpmInfo->lpBaseOfDll;
+		PLOG_INFO << "EXE Loaded";
+		return defaultModule;
+	}
+	
 	return defaultModule;
 }
 
