@@ -20,6 +20,11 @@ namespace HavokFunctions {
 		return Pattern::BaseAddress(L"eldenring.exe");
 	}
 	
+	static bool isRealGameLoaded()
+	{
+		return getGameBaseAddress() != 0;
+	}
+	
 	bool denit()
 	{
 		uintptr_t gameHandle = getGameBaseAddress();
@@ -35,9 +40,9 @@ namespace HavokFunctions {
 
 	bool init(const std::string& gamePath)
 	{
-		uintptr_t baseAddress = getGameBaseAddress();
+		bool realEldenRing = isRealGameLoaded();
 		
-		if (baseAddress == 0)
+		if (!realEldenRing)
 		{
 			std::filesystem::path game { gamePath };
 			game.replace_extension("dll");
@@ -68,26 +73,29 @@ namespace HavokFunctions {
 			PLOG_INFO << "DLL Path: " << dllPath;
 			PLOG_INFO << "DLL Folder: " << dllFolder;
 			const HMODULE hmodule = LoadLibraryA(dllPath.c_str());
+			PLOG_INFO << "hmodule addr: 0x" << std::hex << hmodule;
 			if (hmodule == nullptr)
 			{
 				PLOG_ERROR << "LoadLibraryA Failed GLE: " << GetLastError();
 				return false;
 			}
+
+			PEHelper pe = PEHelper(hmodule);
+			uintptr_t eldenRingAddr = pe.GetBaseAddress();
+			PLOG_INFO << "realEldenRing addr: 0x" << std::hex << eldenRingAddr;
+			
+			const DWORD moduleSize = pe.GetNTHeaders()->OptionalHeader.SizeOfImage;
+			
+			PATTERN_SETMODULE(eldenRingAddr)
+			PATTERN_SETMODULESIZE(moduleSize)
 			
 			PLOG_INFO << "LoadLibraryA Succeeded";
 		}
 		
 		
 		if (CSHavokMan::csHavokManImpPtr == 0) {
-			
-			DWORD64 gameHandle = Pattern::BaseAddress(L"eldenring.exe");
-			auto pe = PEHelper(gameHandle);
-			baseAddress = pe.GetBaseAddress();
-			const DWORD moduleSize = pe.GetNTHeaders()->OptionalHeader.SizeOfImage;
-			
-			PATTERN_SETMODULE(baseAddress)
-			PATTERN_SETMODULESIZE(moduleSize)
 
+			PLOG_INFO << "Module Address: 0x" << std::hex << Pattern::defaultModule;
 			// Base
 			PATTERN_SCAN(hkReferencedObject::addReference, "66 83 79 10 00 4c 8b c9 74 4c 41 8b 41 10 33 c9 8d 90 00 00 01 00 f0 41 0f b1 51 10 74 38 66 90 b8 01 00 00 00 d3 e0 85 c0 7e 0d 0f 1f 44 00 00")
 			PATTERN_SCAN(hkReferencedObject::removeReference, "66 83 79 10 00 4c 8b c1 74 5f 41 8b 40 10 33 c9 44 8d 88 00 00 ff ff f0 45 0f b1 48 10 74 37 90 b8 01 00 00 00 d3 e0 85 c0 7e 0d 0f 1f 44 00 00")
@@ -124,21 +132,24 @@ namespace HavokFunctions {
 			// AOB the entire function
 			PATTERN_SCAN(hkSignal1hknpAction::fire, "48 89 6c 24 18 48 89 74 24 20 41 56 48 83 ec 20 48 83 21 fd 48 8b f1 48 83 09 01 48 8b ea 48 8b 09 4c 8b f6 48 83 e1 fc 74 5a 48 89 5c 24 30 48 89 7c 24 38 0f 1f 40 00 0f 1f 84 00 00 00 00 00 48 8b 59 08 48 8d 79 08 48 8b 01 48 83 e3 fc f6 07 03 74 15 ba 01 00 00 00 ff 10 41 8b 06 83 e0 03 48 0b c3 49 89 06 eb 09 48 8b d5 ff 50 10 4c 8b f7 48 8b cb 48 85 db 75 c6 48 8b 7c 24 38 48 8b 5c 24 30 48 83 26 fc 48 8b 74 24 48 48 8b 6c 24 40 48 83 c4 20 41 5e c3")
 			
-			CSHavokMan::csHavokManImpPtr = reinterpret_cast<decltype(CSHavokMan::csHavokManImpPtr)>(baseAddress + 0x3D76060);
-			CSHavokMan::havokLoggerTLSValue = reinterpret_cast<decltype(CSHavokMan::havokLoggerTLSValue)>(baseAddress + 0x47e051c);
-			CSHavokMan::havokAllocatorTLSValue = reinterpret_cast<decltype(CSHavokMan::havokAllocatorTLSValue)>(baseAddress + 0x47DACD0);
-			CSHavokMan::constructor = reinterpret_cast<decltype(CSHavokMan::constructor)>(baseAddress + 0xc4e370);
+			auto gameAddr = getGameBaseAddress();
+			CSHavokMan::csHavokManImpPtr = reinterpret_cast<decltype(CSHavokMan::csHavokManImpPtr)>(gameAddr + 0x3D76060);
+			CSHavokMan::havokLoggerTLSValue = reinterpret_cast<decltype(CSHavokMan::havokLoggerTLSValue)>(gameAddr + 0x47e051c);
+			CSHavokMan::havokAllocatorTLSValue = reinterpret_cast<decltype(CSHavokMan::havokAllocatorTLSValue)>(gameAddr + 0x47DACD0);
+			CSHavokMan::constructor = reinterpret_cast<decltype(CSHavokMan::constructor)>(gameAddr + 0xc4e370);
 			
 
-			PLOG_INFO << "Initializing CSHavokManImp PTR: " << *CSHavokMan::csHavokManImpPtr;
-    
-			// Allocate enough memory for the actual CSHavokManImp
-			CSHavokMan::CSHavokManImp* csHavokManImp = static_cast<CSHavokMan::CSHavokManImp*>(malloc(0x218));
-			// initialize and set the pointer to our CSHavokManImp global.
-			PLOG_INFO << "Initializing CSHavokManImp";
-			*CSHavokMan::csHavokManImpPtr = CSHavokMan::constructor(csHavokManImp);
-		
-			HOOK(HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor, Havok::implConstructHook)
+			if (*CSHavokMan::csHavokManImpPtr ==  nullptr)
+			{
+				PLOG_INFO << "Initializing CSHavokManImp";
+				// Allocate enough memory for the actual CSHavokManImp
+				CSHavokMan::CSHavokManImp* csHavokManImp = static_cast<CSHavokMan::CSHavokManImp*>(malloc(0x218));
+				// initialize and set the pointer to our CSHavokManImp global.
+				PLOG_INFO << "CSHavokManImp calling constructor on 0x" << std::hex << csHavokManImp;
+				*CSHavokMan::csHavokManImpPtr = CSHavokMan::constructor(csHavokManImp);
+				PLOG_INFO << "Setting TagfileWriteFormat hook at constructor: 0x" << std::hex << Havok::implConstructHook;
+				HOOK(HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor, Havok::implConstructHook)
+			}
 			
 		}
 		

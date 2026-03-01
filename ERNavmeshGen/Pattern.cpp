@@ -1,4 +1,5 @@
 #include "Pattern.h"
+#include <filesystem>
 #include <Psapi.h>
 #include <unordered_map>
 
@@ -25,18 +26,32 @@ LPMODULEINFO Pattern::GetModuleInfo(const wchar_t* szModule) {
 
 DWORD64 Pattern::BaseAddress(const wchar_t* szModule)
 {
-	if  (defaultModule != 0)
+	if (defaultModule != 0)
 	{
 		return defaultModule;
 	}
 	
-	LPMODULEINFO lpmInfo = GetModuleInfo(szModule);
-	if (lpmInfo != nullptr)
+	std::filesystem::path game { szModule };
+	HMODULE hMainModule = GetModuleHandleA(NULL); // Gets the process we are currently inside
+	char currentExePath[MAX_PATH];
+	GetModuleFileNameA(hMainModule, currentExePath, MAX_PATH);
+    
+	std::filesystem::path currentExe { currentExePath };
+	
+	if (currentExe.filename() == game.filename()) 
 	{
-		defaultModule = (DWORD64)lpmInfo->lpBaseOfDll;
-		PLOG_INFO << "EXE Loaded";
+		// We are running AS the EXE! Just grab the current module's base address.
+		defaultModule = reinterpret_cast<DWORD64>(hMainModule);
+        
+		// Fetch and set the module size using your helper
+		if (LPMODULEINFO info = GetModuleInfo(NULL)) {
+			defaultModuleSize = info->SizeOfImage;
+		}
+        
+		PLOG_INFO << "Running natively inside the game EXE.";
 		return defaultModule;
 	}
+
 	
 	return defaultModule;
 }
