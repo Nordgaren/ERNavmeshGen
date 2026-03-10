@@ -31,6 +31,8 @@ public class HavokNavmeshNative
         [MarshalAs(UnmanagedType.LPStr)] string? outPath,
         [MarshalAs(UnmanagedType.LPStr)] string? compendiumPath
     );
+    [DllImport("ERNavmeshGen.dll", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GetSettingsStructSize();
     
     [DllImport("ERNavmeshGen.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GetDefaultNavMeshGenerationSettings(out hkaiNavMeshGenerationUtilsSettings settings);

@@ -42,6 +42,10 @@ public class ERNavmeshGen : IDisposable {
     public bool GenerateNavmesh(string path, string? outPath, string? compendiumPath) {
         return HavokNavmeshNative.GenerateNavMeshFromCollisionAPI(path, outPath, compendiumPath);
     }
+    public int GetSettingsStructSize()
+    {
+        return HavokNavmeshNative.GetSettingsStructSize();
+    }
     public bool Close() {
         return HavokNavmeshNative.Close();
     }

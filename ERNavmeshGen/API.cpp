@@ -147,6 +147,11 @@ NAVMA_API bool BatchGenerateNavMeshFromCollisionAPI(const char* folder, const ch
     return BatchGenerateNavMeshFromCollision(folderPath, outFolderPath, compendiumPath);
 }
 
+NAVMA_API int GetSettingsStructSize()
+{
+    return sizeof(hkaiNavMeshGenerationUtilsSettings);
+}
+
 NAVMA_API void GetDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings* outSettings)
 {
     if (outSettings == nullptr)
@@ -212,8 +217,6 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
         // --- 3. Map Strings ---
         JsonHelpers::ReadString(jSettings, "snapshotFilename", g_snapshot.settings.snapshotFilename);
 
-        // --- 4. Map Nested Objects ---
-        
         // hkVector4 up
         if (jSettings.contains("up")) {
             JsonHelpers::Read(jSettings["up"], "x", g_snapshot.settings.up.x);

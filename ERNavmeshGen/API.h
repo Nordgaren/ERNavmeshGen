@@ -6,6 +6,7 @@ struct hkaiNavMeshGenerationUtilsSettings;
 struct hkaiNavMeshGenerationSnapshot;
 
 NAVMA_API bool Init();
+NAVMA_API int GetSettingsStructSize();
 NAVMA_API void GetDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings* outSettings);
 NAVMA_API void LoadSnapshotFromJson(const char* jsonString);
 NAVMA_API void SetNavmeshGenerationSettings(hkaiNavMeshGenerationSnapshot* snapshot);
