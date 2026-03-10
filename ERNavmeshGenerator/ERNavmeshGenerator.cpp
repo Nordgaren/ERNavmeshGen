@@ -51,6 +51,10 @@ int main(int argc, char* argv[]) {
         PrintUsage(argv[0]);
         return 1;
     }
+    
+    // 5. Execute API Generation calls
+    SetGamePath(gamePath.c_str());
+    Init();
 
     fs::path inPath = inPathStr;
 
@@ -100,9 +104,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Loaded navmesh generation settings from JSON." << std::endl;
     }
 
-    // 5. Execute API Generation calls
-    SetGamePath(gamePath.c_str());
-    
+
     const char* pCompendium = compendiumPath.empty() ? nullptr : compendiumPath.c_str();
     GenerateNavMeshFromCollisionAPI(inPath.string().c_str(), outPath.c_str(), pCompendium);
 

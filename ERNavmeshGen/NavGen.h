@@ -7,12 +7,12 @@
 #include "Util/hkArrayUtil.h"
 #include <plog/Log.h>
 #include <filesystem>
+#include "globals.h"
 
 
 // std::vector<std::unique_ptr<hkaiNavMesh>> keepAliveNavMesh;
 // std::vector<std::unique_ptr<hkSerialize::Load>> keepAliveLoad;
 // std::vector<std::unique_ptr<hkReflect::Var>> keepAliveVar;
-inline hkaiNavMeshGenerationSnapshot g_snapshot = {};
 
 bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& pathOut, const std::string& compendiumPathIn)
 {
@@ -33,7 +33,7 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	PLOG_VERBOSE << "Loaded collision file from " << pathIn;
 
 
-	hkaiNavMeshGenerationSnapshot snapshot { };
+	hkaiNavMeshGenerationSnapshot snapshot = g_snapshot;
 	hknpShape* shape = Havok::getCollisionShapeFromContainer((hkRootLevelContainer*)var->addr);
 	if (hkResult geomBuildResult = *Havok::getGeometryFromShape(shape, &snapshot.geometry))
 	{
@@ -41,17 +41,6 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 		return false;
 	}
 	PLOG_VERBOSE << "Geometry built successfully. (vertices: " << snapshot.geometry.vertices.size << " triangles: " << snapshot.geometry.triangles.size << ")";
-
-	Havok::getDefaultNavMeshGenerationSettings(snapshot.settings);
-	snapshot.settings.up = hkVector4(0, 1, 0, 0);
-	snapshot.settings.precalculateClearanceSeedingData = true;
-
-	std::filesystem::path snapshotPath { pathOut };
-	const std::string snapshotFilename = "s" + snapshotPath.filename().string().substr(1);
-	snapshotPath.replace_filename(snapshotFilename);
-	snapshotPath.replace_extension("hkt");
-	snapshot.settings.snapshotFilename = snapshotPath.string().c_str();
-	snapshot.settings.saveInputSnapshot = true;
 
 	hkaiNavMesh* navMesh = Havok::generateNavMesh(&snapshot);
 	if (!navMesh) return false;

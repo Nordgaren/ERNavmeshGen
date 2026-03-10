@@ -12,8 +12,9 @@ public enum HavokOutputType
 
 public class HavokNavmeshNative
 {
-    [DllImport("ERNavmeshGen.dll", CallingConvention = CallingConvention.Cdecl)]
-    public static extern void SetNavmeshGenerationSettings(ref hkaiNavMeshGenerationSnapshot snapshot);
+    [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern bool Init();
+    
     [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
     public static extern bool SetGamePath([MarshalAs(UnmanagedType.LPStr)] string path);
 
@@ -30,9 +31,15 @@ public class HavokNavmeshNative
         [MarshalAs(UnmanagedType.LPStr)] string? outPath,
         [MarshalAs(UnmanagedType.LPStr)] string? compendiumPath
     );
+    
+    [DllImport("ERNavmeshGen.dll", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GetDefaultNavMeshGenerationSettings(out hkaiNavMeshGenerationUtilsSettings settings);
+    
+    [DllImport("ERNavmeshGen.dll", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void SetNavmeshGenerationSettings(ref hkaiNavMeshGenerationSnapshot snapshot);
 
     [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool Close();
+    internal static extern bool Close();
     
 
 }

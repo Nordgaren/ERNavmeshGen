@@ -205,6 +205,7 @@
     <ClInclude Include="GhidraStructs\Var.h" />
     <ClInclude Include="GhidraStructs\WriteBufferAdapter.h" />
     <ClInclude Include="GhidraStructs\WriteBufferImpl.h" />
+    <ClInclude Include="globals.h" />
     <ClInclude Include="Havok.h" />
     <ClInclude Include="HavokFunctions.h" />
     <ClInclude Include="NavGen.h" />

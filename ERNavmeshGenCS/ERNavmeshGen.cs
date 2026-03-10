@@ -29,7 +29,12 @@ public class ERNavmeshGen : IDisposable {
         }
         Kernel32.SetDllDirectory(Path.GetDirectoryName(path));
         
-        return HavokNavmeshNative.SetGamePath(path);
+        if (!HavokNavmeshNative.SetGamePath(path))
+        {
+            return false;
+        }
+        
+        return HavokNavmeshNative.Init();
     }
     public bool BatchGenerateNavmesh(string folderPath, string? outFolderPath, string? compendiumPath) {
         return HavokNavmeshNative.BatchGenerateNavMeshFromCollisionAPI(folderPath, outFolderPath, compendiumPath);

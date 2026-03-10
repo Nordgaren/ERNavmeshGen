@@ -7,11 +7,16 @@
 #include "NavGen.h"
 #include "Util/fileio.h"
 #include <nlohmann/json.hpp>
+#include "globals.h"
 
 #include "Util/JsonHelpers.h"
 
 static std::string gamePath = "";
 
+NAVMA_API bool Init()
+{
+    return Havok::init(gamePath);
+}
 
 NAVMA_API void SetNavmeshGenerationSettings(hkaiNavMeshGenerationSnapshot* snapshot)
 {
@@ -72,11 +77,11 @@ NAVMA_API bool GenerateNavMeshFromCollisionAPI(const char* path, const char* out
         return false;
     }
     
-    if (!Havok::init(gamePath))
-    {
-        PLOG_ERROR << "Failed to init Havok";
-        return false;
-    }
+    // if (!Havok::init(gamePath))
+    // {
+    //     PLOG_ERROR << "Failed to init Havok";
+    //     return false;
+    // }
 
     std::string colPath = path;
     std::string colOutPath = outFile;
@@ -97,11 +102,11 @@ static bool BatchGenerateNavMeshFromCollision(const std::string& folder, const s
         return false;
     }
 
-    if (!Havok::init(gamePath))
-    {
-        PLOG_ERROR << "Failed to init Havok";
-        return false;
-    }
+    // if (!Havok::init(gamePath))
+    // {
+    //     PLOG_ERROR << "Failed to init Havok";
+    //     return false;
+    // }
     
     std::string compendium = compendiumPath ? compendiumPath : "";
     
@@ -140,6 +145,26 @@ NAVMA_API bool BatchGenerateNavMeshFromCollisionAPI(const char* folder, const ch
     std::string folderPath = folder;
     std::string outFolderPath = outFolder;
     return BatchGenerateNavMeshFromCollision(folderPath, outFolderPath, compendiumPath);
+}
+
+NAVMA_API void GetDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings* outSettings)
+{
+    if (outSettings == nullptr)
+        return;
+
+    // 1. Construct a local object on the C++ stack.
+    // This safely initializes the vftable and sets all hkArray capacityAndFlags to 0x80000000.
+    hkaiNavMeshGenerationUtilsSettings localSettings;
+
+    // 2. Pass the valid, fully-initialized C++ object to Havok
+    Havok::getDefaultNavMeshGenerationSettings(localSettings);
+
+    // 3. Bit-copy the populated data directly into the C# memory block
+    *outSettings = localSettings;
+
+    // 4. Safely nullify the vftable before returning to C# 
+    // (Passing a C++ vftable into managed memory can cause issues if the C# GC moves the struct)
+    outSettings->vftable = nullptr;
 }
 
 // The main Deserialization Function
@@ -223,8 +248,8 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
             JsonHelpers::Read(jPrune, "borderPreservationTolerance", g_snapshot.settings.regionPruningSettings.borderPreservationTolerance);
             JsonHelpers::Read(jPrune, "preserveVerticalBorderRegions", g_snapshot.settings.regionPruningSettings.preserveVerticalBorderRegions);
             JsonHelpers::Read(jPrune, "pruneBeforeTriangulation", g_snapshot.settings.regionPruningSettings.pruneBeforeTriangulation);
-            JsonHelpers::ClearArray(g_snapshot.settings.regionPruningSettings.regionSeedPoints);
-            JsonHelpers::ClearArray(g_snapshot.settings.regionPruningSettings.regionConnections);
+            // JsonHelpers::ClearArray(g_snapshot.settings.regionPruningSettings.regionSeedPoints);
+            // JsonHelpers::ClearArray(g_snapshot.settings.regionPruningSettings.regionConnections);
         }
 
         // WallClimbingSettings
@@ -269,21 +294,21 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
                 JsonHelpers::ReadEnum(jExtra, "vertexSelectionMethod", g_snapshot.settings.simplificationSettings.extraVertexSettings.vertexSelectionMethod);
                 JsonHelpers::Read(jExtra, "vertexFraction", g_snapshot.settings.simplificationSettings.extraVertexSettings.vertexFraction);
                 JsonHelpers::Read(jExtra, "addVerticesOnBoundaryEdges", g_snapshot.settings.simplificationSettings.extraVertexSettings.addVerticesOnBoundaryEdges);
-                JsonHelpers::ClearArray(g_snapshot.settings.simplificationSettings.extraVertexSettings.userVertices);
+                // JsonHelpers::ClearArray(g_snapshot.settings.simplificationSettings.extraVertexSettings.userVertices);
             }
         }
 
-        // --- 5. Nullify all unused dynamic items & Arrays ---
-        g_snapshot.geometry.vftable = nullptr;
-        g_snapshot.settings.vftable = nullptr;
-        g_snapshot.settings.painterOverlapCallback = nullptr;
-
-        JsonHelpers::ClearArray(g_snapshot.geometry.vertices);
-        JsonHelpers::ClearArray(g_snapshot.geometry.triangles);
-        JsonHelpers::ClearArray(g_snapshot.settings.carvers);
-        JsonHelpers::ClearArray(g_snapshot.settings.painters);
-        JsonHelpers::ClearArray(g_snapshot.settings.materialMap);
-        JsonHelpers::ClearArray(g_snapshot.settings.overrideSettings);
+        // Nullify all unused dynamic items & Arrays ---
+        // g_snapshot.geometry.vftable = nullptr;
+        // g_snapshot.settings.vftable = nullptr;
+        // g_snapshot.settings.painterOverlapCallback = nullptr;
+        //
+        // JsonHelpers::ClearArray(g_snapshot.geometry.vertices);
+        // JsonHelpers::ClearArray(g_snapshot.geometry.triangles);
+        // JsonHelpers::ClearArray(g_snapshot.settings.carvers);
+        // JsonHelpers::ClearArray(g_snapshot.settings.painters);
+        // JsonHelpers::ClearArray(g_snapshot.settings.materialMap);
+        // JsonHelpers::ClearArray(g_snapshot.settings.overrideSettings);
 
     }
     catch (const json::exception& e)

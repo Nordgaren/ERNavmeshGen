@@ -10,6 +10,7 @@
 #include "Havok.h"
 #include "Util/HookUtil.h"
 #include "Util/PEPatcher.h"
+#include "globals.h"
 
 namespace HavokFunctions {
 	// Need this later for multi-threading possibly. Will need to de-allocate when we unload. Possibly when we exit thread.
@@ -150,6 +151,8 @@ namespace HavokFunctions {
 				PLOG_INFO << "Setting TagfileWriteFormat hook at constructor: 0x" << std::hex << Havok::implConstructHook;
 				HOOK(HavokFunctions::hkSerialize::TagfileWriteFormat::Impl::constructor, Havok::implConstructHook)
 			}
+			
+			Havok::getDefaultNavMeshGenerationSettings(g_snapshot.settings); 
 			
 		}
 		

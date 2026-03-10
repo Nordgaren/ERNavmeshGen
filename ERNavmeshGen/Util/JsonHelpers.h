@@ -49,10 +49,10 @@ namespace JsonHelpers
     }
 
     // Safely sets arrays to empty / DONT_DEALLOCATE (0x80000000)
-    void ClearArray(hkArrayGeneric& arr) 
-    {
-        arr.data = nullptr;
-        arr.size = 0;
-        arr.capacityAndFlags = hkArrayFlags::DONT_DEALLOCATE; // 0x80000000
-    }
+    // void ClearArray(hkArrayGeneric& arr) 
+    // {
+    //     arr.data = nullptr;
+    //     arr.size = 0;
+    //     arr.capacityAndFlags = hkArrayFlags::DONT_DEALLOCATE; // 0x80000000
+    // }
 }

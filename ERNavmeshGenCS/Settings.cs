@@ -57,8 +57,8 @@ namespace ERNavmeshGenCS
     // --- Enums ---
 
     public enum TriangleWinding : int { WINDING_CCW = 0, WINDING_CW = 1 }
-    public enum EdgeMatchingMetric : int { ORDER_BY_OVERLAP = 1, ORDER_BY_DISTANCE = 2 }
-    public enum ConstructionFlagsBits : int { MATERIAL_WALKABLE = 1, MATERIAL_CUTTING = 2, MATERIAL_WALKABLE_AND_CUTTING = 3 }
+    public enum EdgeMatchingMetric : int {NONE = 0, ORDER_BY_OVERLAP = 1, ORDER_BY_DISTANCE = 2 }
+    public enum ConstructionFlagsBits : int {NONE = 0, MATERIAL_WALKABLE = 1, MATERIAL_CUTTING = 2, MATERIAL_WALKABLE_AND_CUTTING = 3 }
     public enum CharacterWidthUsage : int { NONE = 0, BLOCK_EDGES = 1, SHRINK_NAV_MESH = 2 }
     public enum WalkableTriangleSettings : int { ONLY_FIX_WALKABLE = 0, PREFER_WALKABLE = 1, PREFER_UNWALKABLE = 2 }
     public enum VertexSelectionMethod : int { PROPORTIONAL_TO_AREA = 0, PROPORTIONAL_TO_VERTICES = 1 }
@@ -284,5 +284,12 @@ namespace ERNavmeshGenCS
     {
         public hkGeometry geometry;
         public hkaiNavMeshGenerationUtilsSettings settings;
+        
+        public hkaiNavMeshGenerationSnapshot()
+        {
+            HavokNavmeshNative.GetDefaultNavMeshGenerationSettings(out hkaiNavMeshGenerationUtilsSettings defaultSnapshot);
+
+            settings = defaultSnapshot;
+        }
     }
 }

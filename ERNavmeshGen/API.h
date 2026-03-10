@@ -2,8 +2,11 @@
 #define NAVMA_EXPORTS
 #include "export.h"
 
+struct hkaiNavMeshGenerationUtilsSettings;
 struct hkaiNavMeshGenerationSnapshot;
 
+NAVMA_API bool Init();
+NAVMA_API void GetDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings* outSettings);
 NAVMA_API void LoadSnapshotFromJson(const char* jsonString);
 NAVMA_API void SetNavmeshGenerationSettings(hkaiNavMeshGenerationSnapshot* snapshot);
 NAVMA_API bool SetGamePath(const char* path);
