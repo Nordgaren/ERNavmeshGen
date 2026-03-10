@@ -82,7 +82,7 @@ namespace HavokFunctions {
 
 			PEHelper pe = PEHelper(hmodule);
 			uintptr_t eldenRingAddr = pe.GetBaseAddress();
-			PLOG_INFO << "realEldenRing addr: 0x" << std::hex << eldenRingAddr;
+			PLOG_INFO << "eldenRingAddr addr: 0x" << std::hex << eldenRingAddr;
 			
 			const DWORD moduleSize = pe.GetNTHeaders()->OptionalHeader.SizeOfImage;
 			

@@ -217,6 +217,7 @@
     <ClInclude Include="Util\hkArrayUtil.inl" />
     <ClInclude Include="Util\HookUtil.h" />
     <ClInclude Include="Util\InstructionCursor.h" />
+    <ClInclude Include="Util\JsonHelpers.h" />
     <ClInclude Include="Util\PEPatcher.h" />
     <ClInclude Include="Util\Singleton.h" />
     <ClInclude Include="Util\Singleton.inl" />

@@ -12,6 +12,7 @@
 // std::vector<std::unique_ptr<hkaiNavMesh>> keepAliveNavMesh;
 // std::vector<std::unique_ptr<hkSerialize::Load>> keepAliveLoad;
 // std::vector<std::unique_ptr<hkReflect::Var>> keepAliveVar;
+inline hkaiNavMeshGenerationSnapshot g_snapshot = {};
 
 bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& pathOut, const std::string& compendiumPathIn)
 {
@@ -45,7 +46,7 @@ bool GenerateNavMeshFromCollision(const std::string& pathIn, const std::string& 
 	snapshot.settings.up = hkVector4(0, 1, 0, 0);
 	snapshot.settings.precalculateClearanceSeedingData = true;
 
-	std::filesystem::path snapshotPath { pathIn };
+	std::filesystem::path snapshotPath { pathOut };
 	const std::string snapshotFilename = "s" + snapshotPath.filename().string().substr(1);
 	snapshotPath.replace_filename(snapshotFilename);
 	snapshotPath.replace_extension("hkt");
