@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // 5. Execute API Generation calls
+    // Execute API Generation calls
     SetGamePath(gamePath.c_str());
     Init();
 

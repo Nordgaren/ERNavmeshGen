@@ -178,9 +178,9 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
         json root = json::parse(jsonString);
         
         if (!root.contains("settings")) return;
-        const nlohmann::json& jSettings = root["settings"];
+        const json& jSettings = root["settings"];
 
-        // --- 1. Map Primitives ---
+        // --- 1. Map Primitives (hkaiNavMeshGenerationUtilsSettings) ---
         JsonHelpers::Read(jSettings, "characterHeight", g_snapshot.settings.characterHeight);
         JsonHelpers::Read(jSettings, "quantizationGridSize", g_snapshot.settings.quantizationGridSize);
         JsonHelpers::Read(jSettings, "maxWalkableSlope", g_snapshot.settings.maxWalkableSlope);
@@ -203,8 +203,7 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
         JsonHelpers::Read(jSettings, "checkEdgeGeometryConsistency", g_snapshot.settings.checkEdgeGeometryConsistency);
         JsonHelpers::Read(jSettings, "saveInputSnapshot", g_snapshot.settings.saveInputSnapshot);
 
-        // --- 2. Map Enums ---
-        using Settings = hkaiNavMeshGenerationUtilsSettings;
+        // --- 2. Map Enums (hkaiNavMeshGenerationUtilsSettings) ---
         JsonHelpers::ReadEnum(jSettings, "triangleWinding", g_snapshot.settings.triangleWinding);
         JsonHelpers::ReadEnum(jSettings, "edgeMatchingMetric", g_snapshot.settings.edgeMatchingMetric);
         JsonHelpers::ReadEnum(jSettings, "defaultConstructionProperties", g_snapshot.settings.defaultConstructionProperties);
@@ -248,8 +247,6 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
             JsonHelpers::Read(jPrune, "borderPreservationTolerance", g_snapshot.settings.regionPruningSettings.borderPreservationTolerance);
             JsonHelpers::Read(jPrune, "preserveVerticalBorderRegions", g_snapshot.settings.regionPruningSettings.preserveVerticalBorderRegions);
             JsonHelpers::Read(jPrune, "pruneBeforeTriangulation", g_snapshot.settings.regionPruningSettings.pruneBeforeTriangulation);
-            // JsonHelpers::ClearArray(g_snapshot.settings.regionPruningSettings.regionSeedPoints);
-            // JsonHelpers::ClearArray(g_snapshot.settings.regionPruningSettings.regionConnections);
         }
 
         // WallClimbingSettings
@@ -265,7 +262,16 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
             JsonHelpers::Read(jEdge, "maxStepHeight", g_snapshot.settings.edgeMatchingParams.maxStepHeight);
             JsonHelpers::Read(jEdge, "maxSeparation", g_snapshot.settings.edgeMatchingParams.maxSeparation);
             JsonHelpers::Read(jEdge, "maxOverhang", g_snapshot.settings.edgeMatchingParams.maxOverhang);
-            // ... Add the remaining edge mapping fields here if you use them heavily ...
+            JsonHelpers::Read(jEdge, "behindFaceTolerance", g_snapshot.settings.edgeMatchingParams.behindFaceTolerance);
+            JsonHelpers::Read(jEdge, "cosPlanarAlignmentAngle", g_snapshot.settings.edgeMatchingParams.cosPlanarAlignmentAngle);
+            JsonHelpers::Read(jEdge, "cosVerticalAlignmentAngle", g_snapshot.settings.edgeMatchingParams.cosVerticalAlignmentAngle);
+            JsonHelpers::Read(jEdge, "minEdgeOverlap", g_snapshot.settings.edgeMatchingParams.minEdgeOverlap);
+            JsonHelpers::Read(jEdge, "edgeTraversibilityHorizontalEpsilon", g_snapshot.settings.edgeMatchingParams.edgeTraversibilityHorizontalEpsilon);
+            JsonHelpers::Read(jEdge, "edgeTraversibilityVerticalEpsilon", g_snapshot.settings.edgeMatchingParams.edgeTraversibilityVerticalEpsilon);
+            JsonHelpers::Read(jEdge, "cosClimbingFaceNormalAlignmentAngle", g_snapshot.settings.edgeMatchingParams.cosClimbingFaceNormalAlignmentAngle);
+            JsonHelpers::Read(jEdge, "cosClimbingEdgeAlignmentAngle", g_snapshot.settings.edgeMatchingParams.cosClimbingEdgeAlignmentAngle);
+            JsonHelpers::Read(jEdge, "minAngleBetweenFaces", g_snapshot.settings.edgeMatchingParams.minAngleBetweenFaces);
+            JsonHelpers::Read(jEdge, "edgeParallelTolerance", g_snapshot.settings.edgeMatchingParams.edgeParallelTolerance);
             JsonHelpers::Read(jEdge, "useSafeEdgeTraversibilityHorizontalEpsilon", g_snapshot.settings.edgeMatchingParams.useSafeEdgeTraversibilityHorizontalEpsilon);
         }
 
@@ -281,34 +287,53 @@ NAVMA_API void LoadSnapshotFromJson(const char* jsonString)
         if (jSettings.contains("simplificationSettings")) {
             const auto& jSimp = jSettings["simplificationSettings"];
             JsonHelpers::Read(jSimp, "maxBorderSimplifyArea", g_snapshot.settings.simplificationSettings.maxBorderSimplifyArea);
+            JsonHelpers::Read(jSimp, "maxConcaveBorderSimplifyArea", g_snapshot.settings.simplificationSettings.maxConcaveBorderSimplifyArea);
+            JsonHelpers::Read(jSimp, "minCorridorWidth", g_snapshot.settings.simplificationSettings.minCorridorWidth);
+            JsonHelpers::Read(jSimp, "maxCorridorWidth", g_snapshot.settings.simplificationSettings.maxCorridorWidth);
+            JsonHelpers::Read(jSimp, "holeReplacementArea", g_snapshot.settings.simplificationSettings.holeReplacementArea);
+            JsonHelpers::Read(jSimp, "aabbReplacementAreaFraction", g_snapshot.settings.simplificationSettings.aabbReplacementAreaFraction);
+            JsonHelpers::Read(jSimp, "maxLoopShrinkFraction", g_snapshot.settings.simplificationSettings.maxLoopShrinkFraction);
+            JsonHelpers::Read(jSimp, "maxBorderHeightError", g_snapshot.settings.simplificationSettings.maxBorderHeightError);
+            JsonHelpers::Read(jSimp, "maxBorderDistanceError", g_snapshot.settings.simplificationSettings.maxBorderDistanceError);
+            JsonHelpers::Read(jSimp, "maxPartitionSize", g_snapshot.settings.simplificationSettings.maxPartitionSize);
             JsonHelpers::Read(jSimp, "useHeightPartitioning", g_snapshot.settings.simplificationSettings.useHeightPartitioning);
+            JsonHelpers::Read(jSimp, "maxPartitionHeightError", g_snapshot.settings.simplificationSettings.maxPartitionHeightError);
+            JsonHelpers::Read(jSimp, "useConservativeHeightPartitioning", g_snapshot.settings.simplificationSettings.useConservativeHeightPartitioning);
+            JsonHelpers::Read(jSimp, "hertelMehlhornHeightError", g_snapshot.settings.simplificationSettings.hertelMehlhornHeightError);
+            JsonHelpers::Read(jSimp, "cosPlanarityThreshold", g_snapshot.settings.simplificationSettings.cosPlanarityThreshold);
+            JsonHelpers::Read(jSimp, "nonconvexityThreshold", g_snapshot.settings.simplificationSettings.nonconvexityThreshold);
+            JsonHelpers::Read(jSimp, "boundaryEdgeFilterThreshold", g_snapshot.settings.simplificationSettings.boundaryEdgeFilterThreshold);
+            JsonHelpers::Read(jSimp, "maxSharedVertexHorizontalError", g_snapshot.settings.simplificationSettings.maxSharedVertexHorizontalError);
+            JsonHelpers::Read(jSimp, "maxSharedVertexVerticalError", g_snapshot.settings.simplificationSettings.maxSharedVertexVerticalError);
+            JsonHelpers::Read(jSimp, "maxBoundaryVertexHorizontalError", g_snapshot.settings.simplificationSettings.maxBoundaryVertexHorizontalError);
+            JsonHelpers::Read(jSimp, "maxBoundaryVertexVerticalError", g_snapshot.settings.simplificationSettings.maxBoundaryVertexVerticalError);
             JsonHelpers::Read(jSimp, "mergeLongestEdgesFirst", g_snapshot.settings.simplificationSettings.mergeLongestEdgesFirst);
             JsonHelpers::Read(jSimp, "saveInputSnapshot", g_snapshot.settings.simplificationSettings.saveInputSnapshot);
             
             // Nested string inside SimplificationUtils
             JsonHelpers::ReadString(jSimp, "snapshotFilename", g_snapshot.settings.simplificationSettings.snapshotFilename);
 
-            // Nested ExtraVertexSettings
+            // hkaiNavMeshSimplificationUtils::ExtraVertexSettings
             if (jSimp.contains("extraVertexSettings")) {
                 const auto& jExtra = jSimp["extraVertexSettings"];
                 JsonHelpers::ReadEnum(jExtra, "vertexSelectionMethod", g_snapshot.settings.simplificationSettings.extraVertexSettings.vertexSelectionMethod);
                 JsonHelpers::Read(jExtra, "vertexFraction", g_snapshot.settings.simplificationSettings.extraVertexSettings.vertexFraction);
+                JsonHelpers::Read(jExtra, "areaFraction", g_snapshot.settings.simplificationSettings.extraVertexSettings.areaFraction);
+                JsonHelpers::Read(jExtra, "minPartitionArea", g_snapshot.settings.simplificationSettings.extraVertexSettings.minPartitionArea);
+                JsonHelpers::Read(jExtra, "numSmoothingIterations", g_snapshot.settings.simplificationSettings.extraVertexSettings.numSmoothingIterations);
+                JsonHelpers::Read(jExtra, "iterationDamping", g_snapshot.settings.simplificationSettings.extraVertexSettings.iterationDamping);
                 JsonHelpers::Read(jExtra, "addVerticesOnBoundaryEdges", g_snapshot.settings.simplificationSettings.extraVertexSettings.addVerticesOnBoundaryEdges);
-                // JsonHelpers::ClearArray(g_snapshot.settings.simplificationSettings.extraVertexSettings.userVertices);
+                JsonHelpers::Read(jExtra, "addVerticesOnPartitionBorders", g_snapshot.settings.simplificationSettings.extraVertexSettings.addVerticesOnPartitionBorders);
+                JsonHelpers::Read(jExtra, "boundaryEdgeSplitLength", g_snapshot.settings.simplificationSettings.extraVertexSettings.boundaryEdgeSplitLength);
+                JsonHelpers::Read(jExtra, "partitionBordersSplitLength", g_snapshot.settings.simplificationSettings.extraVertexSettings.partitionBordersSplitLength);
+                JsonHelpers::Read(jExtra, "userVertexOnBoundaryTolerance", g_snapshot.settings.simplificationSettings.extraVertexSettings.userVertexOnBoundaryTolerance);
             }
         }
 
-        // Nullify all unused dynamic items & Arrays ---
+        // --- 5. Nullify unsupported dynamic items just in case ---
         // g_snapshot.geometry.vftable = nullptr;
         // g_snapshot.settings.vftable = nullptr;
         // g_snapshot.settings.painterOverlapCallback = nullptr;
-        //
-        // JsonHelpers::ClearArray(g_snapshot.geometry.vertices);
-        // JsonHelpers::ClearArray(g_snapshot.geometry.triangles);
-        // JsonHelpers::ClearArray(g_snapshot.settings.carvers);
-        // JsonHelpers::ClearArray(g_snapshot.settings.painters);
-        // JsonHelpers::ClearArray(g_snapshot.settings.materialMap);
-        // JsonHelpers::ClearArray(g_snapshot.settings.overrideSettings);
 
     }
     catch (const json::exception& e)
