@@ -8,9 +8,9 @@ namespace ERNavmeshGenCS
     [StructLayout(LayoutKind.Sequential)]
     public struct hkArrayGeneric
     {
-        public IntPtr data;
-        public uint size;
-        public uint capacityAndFlags;
+        [JsonIgnore] public IntPtr data;
+        [JsonIgnore] public uint size;
+        [JsonIgnore] public uint capacityAndFlags;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -32,16 +32,17 @@ namespace ERNavmeshGenCS
     [StructLayout(LayoutKind.Sequential)]
     public struct hkPropertyBag
     {
-        public IntPtr bag;
+        [JsonIgnore] public IntPtr bag;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct hkReferencedObject_Data
     {
-        public hkPropertyBag propertyBag;
-        public ushort memSizeAndFlags;
-        public ushort refCount;
-        private uint _padding; // Pads the struct to 16 bytes for 8-byte alignment
+        [JsonIgnore] public hkPropertyBag propertyBag;
+        [JsonIgnore] public ushort memSizeAndFlags;
+        [JsonIgnore] public ushort refCount;
+        
+        [JsonIgnore] private uint _padding; 
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -70,9 +71,11 @@ namespace ERNavmeshGenCS
         public float minRegionArea;
         public float minDistanceToSeedPoints;
         public float borderPreservationTolerance;
+        
         [MarshalAs(UnmanagedType.I1)] public bool preserveVerticalBorderRegions;
         [MarshalAs(UnmanagedType.I1)] public bool pruneBeforeTriangulation;
-        [JsonIgnore] private ushort _padding1;
+        
+        [JsonIgnore] private ushort _padding1; 
         
         [JsonIgnore] public hkArrayGeneric regionSeedPoints;
         [JsonIgnore] public hkArrayGeneric regionConnections;
@@ -83,7 +86,8 @@ namespace ERNavmeshGenCS
     {
         [MarshalAs(UnmanagedType.I1)] public bool enableWallClimbing;
         [MarshalAs(UnmanagedType.I1)] public bool excludeWalkableFaces;
-        private ushort _padding1; // Maintain alignment
+        
+        [JsonIgnore] private ushort _padding1; 
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -110,9 +114,11 @@ namespace ERNavmeshGenCS
         public float cosClimbingEdgeAlignmentAngle;
         public float minAngleBetweenFaces;
         public float edgeParallelTolerance;
+        
         [MarshalAs(UnmanagedType.I1)] public bool useSafeEdgeTraversibilityHorizontalEpsilon;
-        private byte _padding1;
-        private ushort _padding2; 
+        
+        [JsonIgnore] private byte _padding1;
+        [JsonIgnore] private ushort _padding2; 
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -124,21 +130,57 @@ namespace ERNavmeshGenCS
         public float minPartitionArea;
         public int numSmoothingIterations;
         public float iterationDamping;
+        
         [MarshalAs(UnmanagedType.I1)] public bool addVerticesOnBoundaryEdges;
         [MarshalAs(UnmanagedType.I1)] public bool addVerticesOnPartitionBorders;
         private ushort _padding1; 
+        
+        [JsonIgnore] private ushort _padding1; 
+        
         public float boundaryEdgeSplitLength;
         public float partitionBordersSplitLength;
         public float userVertexOnBoundaryTolerance;
-        private uint _padding2; // Align next pointer to 8 bytes
-        public hkArrayGeneric userVertices;
+        
+        [JsonIgnore] private uint _padding2; 
+        
+        [JsonIgnore] public hkArrayGeneric userVertices;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct hkaiNavMeshSimplificationUtils_Settings
     {
-        // ... (Keep all the previous float/bool fields the same) ...
+        public float maxBorderSimplifyArea;
+        public float maxConcaveBorderSimplifyArea;
+        public float minCorridorWidth;
+        public float maxCorridorWidth;
+        public float holeReplacementArea;
+        public float aabbReplacementAreaFraction;
+        public float maxLoopShrinkFraction;
+        public float maxBorderHeightError;
+        public float maxBorderDistanceError;
+        public int maxPartitionSize;
+        
+        [MarshalAs(UnmanagedType.I1)] public bool useHeightPartitioning;
+        
+        [JsonIgnore] private byte _padding1;
+        [JsonIgnore] private ushort _padding2;
+        
+        public float maxPartitionHeightError;
+        
+        [MarshalAs(UnmanagedType.I1)] public bool useConservativeHeightPartitioning;
+        
+        [JsonIgnore] private byte _padding3;
+        [JsonIgnore] private ushort _padding4;
+        
+        public float hertelMehlhornHeightError;
+        public float cosPlanarityThreshold;
+        public float nonconvexityThreshold;
+        public float boundaryEdgeFilterThreshold;
+        public float maxSharedVertexHorizontalError;
+        public float maxSharedVertexVerticalError;
+        public float maxBoundaryVertexHorizontalError;
         public float maxBoundaryVertexVerticalError;
+        
         [MarshalAs(UnmanagedType.I1)] public bool mergeLongestEdgesFirst;
         
         [JsonIgnore] private byte _padding5;
@@ -151,10 +193,8 @@ namespace ERNavmeshGenCS
         [JsonIgnore] private byte _padding7;
         [JsonIgnore] private ushort _padding8;
         [JsonIgnore] private uint _padding9;
-
-        // CHANGED: string instead of IntPtr
-        [MarshalAs(UnmanagedType.LPStr)] 
-        public string snapshotFilename; 
+        
+        [MarshalAs(UnmanagedType.LPStr)] public string snapshotFilename; 
     }
 
     // --- Main Settings Struct ---
@@ -169,9 +209,29 @@ namespace ERNavmeshGenCS
         [JsonIgnore] private uint _vectorAlignPadding; 
 
         public hkVector4 up;
+        public float quantizationGridSize;
+        public float maxWalkableSlope;
+        public TriangleWinding triangleWinding;
+        public float degenerateAreaThreshold;
+        public float degenerateWidthThreshold;
+        public float convexThreshold;
+        public int maxNumEdgesPerFace;
+        public hkaiNavMeshEdgeMatchingParameters edgeMatchingParams;
+        public EdgeMatchingMetric edgeMatchingMetric;
+        public int edgeConnectionIterations;
         
-        // ... (Keep all the primitive settings the same) ...
-
+        [MarshalAs(UnmanagedType.I1)] public bool smallBoundaryEdgeGroupRemoval;
+        
+        [JsonIgnore] private byte _padding1;
+        [JsonIgnore] private ushort _padding2;
+        
+        public RegionPruningSettings regionPruningSettings;
+        public WallClimbingSettings wallClimbingSettings;
+        
+        [JsonIgnore] private uint _paddingAabbAlignment; 
+        
+        public hkAabb boundsAabb;
+        
         [JsonIgnore] public hkArrayGeneric carvers;
         [JsonIgnore] public hkArrayGeneric painters;
         [JsonIgnore] public IntPtr painterOverlapCallback; 
@@ -188,16 +248,32 @@ namespace ERNavmeshGenCS
         
         public hkaiOverlappingTriangles_Settings overlappingTrianglesSettings;
         
-        // ... (Keep simplificationSettings and booleans the same) ...
-
+        [MarshalAs(UnmanagedType.I1)] public bool swapOverlappingAndQuantization;
+        [MarshalAs(UnmanagedType.I1)] public bool weldInputVertices;
+        
+        [JsonIgnore] private ushort _padding6;
+        
+        public float weldThreshold;
+        public float minCharacterWidth;
+        public CharacterWidthUsage characterWidthUsage;
+        public float maxCharacterWidth;
+        
+        [MarshalAs(UnmanagedType.I1)] public bool precalculateClearanceSeedingData;
+        [MarshalAs(UnmanagedType.I1)] public bool enableSimplification;
+        
+        [JsonIgnore] private ushort _padding7;
+        
+        public hkaiNavMeshSimplificationUtils_Settings simplificationSettings;
+        public int carvedMaterialDeprecated;
+        public int carvedCuttingMaterialDeprecated;
+        
+        [MarshalAs(UnmanagedType.I1)] public bool checkEdgeGeometryConsistency;
         [MarshalAs(UnmanagedType.I1)] public bool saveInputSnapshot;
         
         [JsonIgnore] private ushort _padding8;
         [JsonIgnore] private uint _padding9; 
-
-        // CHANGED: string instead of IntPtr
-        [MarshalAs(UnmanagedType.LPStr)] 
-        public string snapshotFilename; 
+        
+        [MarshalAs(UnmanagedType.LPStr)] public string snapshotFilename; 
         
         [JsonIgnore] public hkArrayGeneric overrideSettings;
     }
