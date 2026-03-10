@@ -133,7 +133,6 @@ namespace ERNavmeshGenCS
         
         [MarshalAs(UnmanagedType.I1)] public bool addVerticesOnBoundaryEdges;
         [MarshalAs(UnmanagedType.I1)] public bool addVerticesOnPartitionBorders;
-        private ushort _padding1; 
         
         [JsonIgnore] private ushort _padding1; 
         
