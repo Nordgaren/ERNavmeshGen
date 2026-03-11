@@ -21,7 +21,6 @@ public:
     ZydisDecoder decoder;
     ks_engine* ks = nullptr;
 
-    // INITIALIZATION
     bool Load(const std::string& filepath)
     {
         // Read file into buffer
@@ -57,7 +56,6 @@ public:
         if (ks) ks_close(ks);
     }
 
-    // --- 2. PE MATH ---
     uint32_t RvaToFileOffset(uint32_t rva)
     {
         PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
@@ -72,7 +70,6 @@ public:
         return 0;
     }
 
-    // --- 3. THE KEYSTONE ASSEMBLER WRAPPER ---
     std::vector<uint8_t> Assemble(const std::string& asmCode, uint64_t runtimeAddress)
     {
         unsigned char* encode;
@@ -92,26 +89,24 @@ public:
         return {};
     }
 
-    // --- 4. THE PATCH WRITER ---
     bool WritePatch(uint32_t targetRva, const std::string& asmCode)
     {
-        // 1. Convert the destination RVA to an absolute memory address
+        // Convert the destination RVA to an absolute memory address
         uint64_t runtimeAddress = imageBase + targetRva;
 
-        // 2. Compile the string into raw bytes
+        // Compile the string into raw bytes
         std::vector<uint8_t> machineCode = Assemble(asmCode, runtimeAddress);
         if (machineCode.empty()) return false;
 
-        // 3. Find where this is physically located in our file buffer
+        // Find where this is physically located in our file buffer
         uint32_t fileOffset = RvaToFileOffset(targetRva);
         if (fileOffset == 0) return false;
 
-        // 4. Overwrite the file buffer with our new bytes
+        // Overwrite the file buffer with our new bytes
         memcpy(&buffer[fileOffset], machineCode.data(), machineCode.size());
         return true;
     }
 
-    // --- 5. SAVE EXECUTABLE ---
     bool Save(const std::string& outPath)
     {
         std::ofstream outFile(outPath, std::ios::binary);

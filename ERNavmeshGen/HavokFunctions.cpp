@@ -74,7 +74,6 @@ namespace HavokFunctions {
 			PLOG_INFO << "DLL Path: " << dllPath;
 			PLOG_INFO << "DLL Folder: " << dllFolder;
 			const HMODULE hmodule = LoadLibraryA(dllPath.c_str());
-			PLOG_INFO << "hmodule addr: 0x" << std::hex << hmodule;
 			if (hmodule == nullptr)
 			{
 				PLOG_ERROR << "LoadLibraryA Failed GLE: " << GetLastError();
@@ -83,7 +82,6 @@ namespace HavokFunctions {
 
 			PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(hmodule);
 			PIMAGE_NT_HEADERS ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(hmodule + dosHeader->e_lfanew);
-			PLOG_INFO << "eldenRingAddr addr: 0x" << std::hex << hmodule;
 			const DWORD moduleSize = ntHeaders->OptionalHeader.SizeOfImage;
 			
 			PATTERN_SETMODULE(reinterpret_cast<DWORD64>(hmodule))
