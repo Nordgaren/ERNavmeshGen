@@ -228,12 +228,6 @@
     <Content Include="README.md" />
     <Content Include="vcpkg.json" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PELoader\PELoader.vcxproj">
-      <Project>{eca04b54-bf24-41a3-8c13-b6761f6c6713}</Project>
-      <Name>PELoader</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -81,13 +81,12 @@ namespace HavokFunctions {
 				return false;
 			}
 
-			PEHelper pe = PEHelper(hmodule);
-			uintptr_t eldenRingAddr = pe.GetBaseAddress();
-			PLOG_INFO << "eldenRingAddr addr: 0x" << std::hex << eldenRingAddr;
+			PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(hmodule);
+			PIMAGE_NT_HEADERS ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(hmodule + dosHeader->e_lfanew);
+			PLOG_INFO << "eldenRingAddr addr: 0x" << std::hex << hmodule;
+			const DWORD moduleSize = ntHeaders->OptionalHeader.SizeOfImage;
 			
-			const DWORD moduleSize = pe.GetNTHeaders()->OptionalHeader.SizeOfImage;
-			
-			PATTERN_SETMODULE(eldenRingAddr)
+			PATTERN_SETMODULE(reinterpret_cast<DWORD64>(hmodule))
 			PATTERN_SETMODULESIZE(moduleSize)
 			
 			PLOG_INFO << "LoadLibraryA Succeeded";
