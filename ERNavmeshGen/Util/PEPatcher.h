@@ -21,7 +21,7 @@ public:
     ZydisDecoder decoder;
     ks_engine* ks = nullptr;
 
-    // --- 1. INITIALIZATION ---
+    // INITIALIZATION
     bool Load(const std::string& filepath)
     {
         // Read file into buffer

@@ -169,7 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="API.h" />
-    <ClInclude Include="DLLPatcher.h" />
+    <ClInclude Include="EXE2DLL.h" />
     <ClInclude Include="export.h" />
     <ClInclude Include="GhidraStructs\BuiltInTypes.h" />
     <ClInclude Include="GhidraStructs\GhidraStructs.h" />

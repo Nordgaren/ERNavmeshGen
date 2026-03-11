@@ -6,7 +6,7 @@
 #include "../PELoader/PEHelper.h"
 #include <winternl.h> // Required for PTEB structure
 
-#include "DLLPatcher.h"
+#include "EXE2DLL.h"
 #include "Havok.h"
 #include "Util/HookUtil.h"
 #include "Util/PEPatcher.h"
