@@ -23,7 +23,6 @@ public class ERNavmeshGen : IDisposable {
     }
     public bool SetupNavmeshDll(string path) {
         _erPath = path;
-        //_navgen = Kernel32.LoadLibrary("DS3NavmeshGen.dll");
         if (!path.EndsWith(".exe")) {
             throw new FileNotFoundException($"could not find {path}\\EldenRing.exe. Please provide a path to the \"Elden Ring\\Game\" folder.");
         }
@@ -42,16 +41,26 @@ public class ERNavmeshGen : IDisposable {
     public bool GenerateNavmesh(string path, string? outPath, string? compendiumPath) {
         return HavokNavmeshNative.GenerateNavMeshFromCollisionAPI(path, outPath, compendiumPath);
     }
-    public int GetSettingsStructSize()
-    {
-        return HavokNavmeshNative.GetSettingsStructSize();
-    }
     public bool Close() {
         return HavokNavmeshNative.Close();
     }
-    public void Dispose() {
-        //Kernel32.FreeLibrary(_navgen);
+    public void Dispose()
+    {
+        Close();
     }
-    
-    
+    // Won't be useful until we can use the DLL fully from within C#
+    private bool SetNavMeshGenerationSettings(hkaiNavMeshGenerationSnapshot settings)
+    {
+        HavokNavmeshNative.SetNavmeshGenerationSettings(ref settings);
+        return true;
+    }
+    public hkaiNavMeshGenerationUtilsSettings GetDefaultNavMeshGenerationSettings()
+    {
+        HavokNavmeshNative.GetDefaultNavMeshGenerationSettings(out hkaiNavMeshGenerationUtilsSettings settings);
+        return settings;
+    }
+    public static int GetSettingsStructSize()
+    {
+        return HavokNavmeshNative.GetSettingsStructSize();
+    }
 }

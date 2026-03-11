@@ -10,7 +10,7 @@ public enum HavokOutputType
     ALL = 3,
 };
 
-public class HavokNavmeshNative
+internal class HavokNavmeshNative
 {
     [DllImport("ERNavmeshGen.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
     internal static extern bool Init();
