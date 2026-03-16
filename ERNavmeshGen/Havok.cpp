@@ -17,11 +17,10 @@ bool Havok::init(std::string& gamePath)
 
 hkSerialize::Load* Havok::getLoader()
 {
-    std::unique_ptr<hkSerialize::Load> load = std::make_unique<hkSerialize::Load>();
-    hkSerialize::Load* rawPtr = load.release();
-    HavokFunctions::hkSerialize::Load::constructor(rawPtr);
+    hkSerialize::Load* load = new hkSerialize::Load();
+    HavokFunctions::hkSerialize::Load::constructor(load);
     //keepAliveLoad.push_back(std::move(load));
-    return rawPtr;
+    return load;
 }
 
 hkResult Havok::loadCompendium(hkSerialize::Load* loader, const std::string& path)
@@ -40,12 +39,10 @@ hkReflect::Var* Havok::load(hkSerialize::Load* loader, const std::string& path)
     hkIo::Detail::ReadBufferAdapter readBufferAdapter{};
     readBufferAdapter.impl = HavokFunctions::hkIo::Detail::createReaderImpl(path.c_str());
 
-
-    std::unique_ptr<hkReflect::Var> var = std::make_unique<hkReflect::Var>();
-    hkReflect::Var* rawPtr = var.release();
-    HavokFunctions::hkSerialize::Load::toVar(loader, rawPtr, &readBufferAdapter, nullptr);
+    hkReflect::Var* var = new hkReflect::Var();
+    HavokFunctions::hkSerialize::Load::toVar(loader, var, &readBufferAdapter, nullptr);
     // keepAliveVar.push_back(std::move(var));
-    return rawPtr;
+    return var;
 }
 
 hkResult Havok::save(hkReflect::Var* var, const std::string& path)
@@ -88,17 +85,15 @@ hkResult* Havok::getGeometryFromShape(hknpShape* shape, hkGeometry* geomOut)
 
 hkaiNavMesh* Havok::generateNavMesh(hkaiNavMeshGenerationSnapshot* snapshot)
 {
-    std::unique_ptr<hkaiNavMesh> navMesh = std::make_unique<hkaiNavMesh>();
-    hkaiNavMesh* rawPtr = navMesh.release();
-    HavokFunctions::hkaiNavMesh::constructor(rawPtr);
+    hkaiNavMesh* navmesh = new hkaiNavMesh();
+    HavokFunctions::hkaiNavMesh::constructor(navmesh);
 
     hkaiNavMeshGenerationOutputs outputs{};
 
-    outputs.navMesh = rawPtr;
+    outputs.navMesh = navmesh;
     HavokFunctions::hkaiNavMeshGenerationUtils::generateNavMesh(&snapshot->settings, snapshot, &outputs, nullptr,
                                                                 nullptr);
-    // keepAliveNavMesh.push_back(std::move(navMesh));
-    return rawPtr;
+    return navmesh;
 }
 
 void Havok::getDefaultNavMeshGenerationSettings(hkaiNavMeshGenerationUtilsSettings& settings)

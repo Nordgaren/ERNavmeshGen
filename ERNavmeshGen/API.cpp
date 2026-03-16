@@ -77,11 +77,11 @@ NAVMA_API bool GenerateNavMeshFromCollisionAPI(const char* path, const char* out
         return false;
     }
     
-    // if (!Havok::init(gamePath))
-    // {
-    //     PLOG_ERROR << "Failed to init Havok";
-    //     return false;
-    // }
+    if (!Havok::init(gamePath))
+    {
+        PLOG_ERROR << "Failed to init Havok";
+        return false;
+    }
 
     std::string colPath = path;
     std::string colOutPath = outFile;

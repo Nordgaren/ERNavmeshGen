@@ -171,7 +171,7 @@ namespace pePatcher
 
     static bool BypassCSWindowInit(PEPatcher& patcher, uint32_t initEngineRva)
     {
-        PLOG_INFO << "[***] Processing Engine Init (Bypassing CSWindow) [***]";
+        PLOG_INFO << "[***] Processing Engine Init (Bypassing CSWindow)";
 
         InstructionCursor cursor(patcher.buffer, patcher.imageBase, initEngineRva);
 
@@ -340,7 +340,8 @@ namespace pePatcher
                     }
                 }
             }
-            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3) {
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3)
+            {
                 PLOG_ERROR << "[-] Failed to find the CSWindow block.";
                 return false;
             };
@@ -362,84 +363,190 @@ namespace pePatcher
     }
 
 
-    static bool PatchMutexCheck(PEPatcher& patcher, uint32_t winMainRva)
+    static bool BypassMutexAndSteam(PEPatcher& patcher, uint32_t winMainRva)
     {
-        PLOG_INFO << "Processing Mutex Check Bypass";
+        PLOG_INFO << "Processing Mutex and Steam Bypasses";
 
         InstructionCursor cursor(patcher.buffer, patcher.imageBase, winMainRva);
-        uint32_t targetFuncRva = 0;
 
-        // In x64 Windows, wide strings (L"") are UTF-16LE (2 bytes per character).
-        // We define the byte pattern for "Global\SekiroMutex" to search for.
-        const uint8_t mutexStr[] = {
-            'G', 0, 'l', 0, 'o', 0, 'b', 0, 'a', 0, 'l', 0, '\\', 0,
-            'S', 0, 'e', 0, 'k', 0, 'i', 0, 'r', 0, 'o', 0, 'M', 0, 'u', 0, 't', 0, 'e', 0, 'x', 0
-        };
+        uint32_t mutexFuncRva = 0;
+        uint32_t steamFuncRva = 0;
 
-        PLOG_INFO << "[*] Scanning WinMain for Mutex Initialization...";
+        // Use u"..." to guarantee 2-byte UTF-16 characters exactly as they appear in the PE file
+        std::u16string mutexStr = u"Global\\SekiroMutex";
 
-        // Scan the first 20 instructions of WinMain to find its startup calls
-        for (int i = 0; i < 20; ++i)
+        // Calculate the physical size in bytes (17 characters * 2 bytes = 34 bytes)
+        size_t compareBytes = mutexStr.length() * sizeof(char16_t);
+
+        PLOG_INFO << "[*] Scanning WinMain for Initialization sequence...";
+
+        // --- Step 1: Find IsGameAlreadyOpen (Mutex) ---
+        while (cursor.Next())
         {
-            if (!cursor.Next()) break;
-
             if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
             {
                 uint32_t callTargetRva = cursor.GetAbsoluteAddress(0) - patcher.imageBase;
-
-                // Drop a temporary cursor into the called function
                 InstructionCursor targetCursor(patcher.buffer, patcher.imageBase, callTargetRva);
 
-                // Scan the first 30 instructions of this target function
                 for (int j = 0; j < 30; ++j)
                 {
                     if (!targetCursor.Next()) break;
 
-                    // Look for LEA RCX, [RIP + disp] (Loading a string pointer)
                     if (targetCursor.instr.mnemonic == ZYDIS_MNEMONIC_LEA &&
                         targetCursor.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY &&
                         targetCursor.operands[1].mem.base == ZYDIS_REGISTER_RIP)
                     {
-                        // Calculate exactly where this string lives in the file
                         uint32_t strRva = targetCursor.GetAbsoluteAddress(1) - patcher.imageBase;
                         uint32_t strOffset = patcher.RvaToFileOffset(strRva);
 
-                        // Verify the string matches "Global\SekiroMutex"
-                        if (strOffset > 0 && strOffset + sizeof(mutexStr) <= patcher.buffer.size())
+                        if (strOffset > 0 && strOffset + compareBytes <= patcher.buffer.size())
                         {
-                            if (memcmp(&patcher.buffer[strOffset], mutexStr, sizeof(mutexStr)) == 0)
+                            // We compare against mutexStr.data() using our calculated byte length
+                            if (memcmp(&patcher.buffer[strOffset], mutexStr.data(), compareBytes) == 0)
                             {
-                                targetFuncRva = callTargetRva; // We found the Mutex function!
+                                mutexFuncRva = callTargetRva; // We found the Mutex function!
                                 break;
                             }
                         }
                     }
-
-                    // Don't scan past the end of small functions
                     if (targetCursor.instr.mnemonic == ZYDIS_MNEMONIC_RET) break;
                 }
             }
 
-            if (targetFuncRva != 0) break; // Found it, stop scanning WinMain
+            if (mutexFuncRva != 0) break; // Found the Mutex call, stop scanning!
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3)
+            {
+                PLOG_ERROR << "[-] Failed to locate IsGameAlreadyOpen.";
+                return false;
+            }
         }
 
-        if (targetFuncRva == 0)
+        // --- Step 2: Find SetUpSteamAPI ---
+        // The cursor is currently sitting exactly on `CALL IsGameAlreadyOpen`.
+        // The very next CALL instruction in WinMain is guaranteed to be SetUpSteamAPI.
+        while (cursor.Next())
         {
-            PLOG_ERROR << "[-] Failed to locate IsGameAlreadyOpen via mutex string.";
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
+            {
+                steamFuncRva = cursor.GetAbsoluteAddress(0) - patcher.imageBase;
+                break;
+            }
+            // If we hit another control flow abstraction before a CALL, something is wrong
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_JMP || cursor.instr.mnemonic == ZYDIS_MNEMONIC_RET) break;
+        }
+
+        if (steamFuncRva == 0)
+        {
+            PLOG_ERROR << "[-] Failed to locate SetUpSteamAPI.";
             return false;
         }
 
-        PLOG_INFO << "[+] Found IsGameAlreadyOpen at RVA: 0x" << std::hex << targetFuncRva;
+        PLOG_INFO << "[+] Found IsGameAlreadyOpen at RVA: 0x" << std::hex << mutexFuncRva;
+        PLOG_INFO << "[+] Found SetUpSteamAPI at RVA: 0x" << steamFuncRva;
 
-        // We want the function to immediately return TRUE (AL = 1).
-        // In x64, 'mov eax, 1' zero-extends to RAX, setting AL to 1.
+        // --- Step 3: Apply the Bypasses ---
+        // We want both functions to immediately return TRUE (EAX = 1) without doing any work.
         std::string asmCode = "mov eax, 1; ret;";
-        PLOG_INFO << "[*] Patching IsGameAlreadyOpen: " << asmCode;
 
-        patcher.WritePatch(targetFuncRva, asmCode);
+        PLOG_INFO << "[*] Patching IsGameAlreadyOpen...";
+        patcher.WritePatch(mutexFuncRva, asmCode);
 
-        PLOG_INFO << "[+] Mutex check successfully neutralized!";
+        PLOG_INFO << "[*] Patching SetUpSteamAPI...";
+        patcher.WritePatch(steamFuncRva, asmCode);
+
+        PLOG_INFO << "[+] Mutex and Steam DRM checks successfully neutralized!";
         return true;
+    }
+
+    static bool BypassSteamInit(PEPatcher& patcher, uint32_t initEngineRva)
+    {
+        PLOG_INFO << "Processing Engine Init (Bypassing Steam)";
+
+        InstructionCursor cursor(patcher.buffer, patcher.imageBase, initEngineRva);
+
+        uint64_t steamSystemObjAddr = 0;
+        uint32_t firstCallRva = 0;
+        uint32_t secondCallRva = 0;
+
+        PLOG_INFO << "[*] Scanning for Steam System object references...";
+
+        while (cursor.Next())
+        {
+            // --- Step 1: Find the first Steam Call (with the JZ check) ---
+            if (steamSystemObjAddr == 0)
+            {
+                if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_LEA &&
+                    cursor.operands[0].reg.value == ZYDIS_REGISTER_RCX &&
+                    cursor.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY &&
+                    cursor.operands[1].mem.base == ZYDIS_REGISTER_RIP)
+                {
+                    uint64_t candidateAddr = cursor.GetAbsoluteAddress(1);
+
+                    InstructionCursor peek1 = cursor.Peek();
+                    if (peek1.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
+                    {
+                        InstructionCursor peek2 = peek1.Peek();
+                        if (peek2.instr.mnemonic == ZYDIS_MNEMONIC_TEST &&
+                            peek2.operands[0].reg.value == ZYDIS_REGISTER_AL)
+                        {
+                            InstructionCursor peek3 = peek2.Peek();
+                            if (peek3.instr.mnemonic == ZYDIS_MNEMONIC_JZ)
+                            {
+                                // We found the first Steam setup sequence!
+                                steamSystemObjAddr = candidateAddr;
+                                firstCallRva = peek1.rva;
+                                PLOG_INFO << "[+] Steam Singleton found at absolute address: 0x" << std::hex <<
+                                    steamSystemObjAddr;
+                                PLOG_INFO << "[+] Found 1st Steam CALL at RVA: 0x" << firstCallRva;
+                            }
+                        }
+                    }
+                }
+            }
+            // --- Step 2: Find the second Steam Call (using the tracked address) ---
+            else
+            {
+                if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_LEA &&
+                    cursor.operands[0].reg.value == ZYDIS_REGISTER_RCX &&
+                    cursor.operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY &&
+                    cursor.operands[1].mem.base == ZYDIS_REGISTER_RIP)
+                {
+                    // Is it loading the exact same Steam object?
+                    if (cursor.GetAbsoluteAddress(1) == steamSystemObjAddr)
+                    {
+                        InstructionCursor peek1 = cursor.Peek();
+                        if (peek1.instr.mnemonic == ZYDIS_MNEMONIC_CALL)
+                        {
+                            secondCallRva = peek1.rva;
+                            PLOG_INFO << "[+] Found 2nd Steam CALL at RVA: 0x" << secondCallRva;
+                            break; // We have both targets, get out of the loop
+                        }
+                    }
+                }
+            }
+
+            if (cursor.instr.mnemonic == ZYDIS_MNEMONIC_INT3)
+            {
+                std::cerr << "[-] Failed to find both Steam initialization calls.";
+                return false;
+            };
+        }
+
+        // --- Step 3: Apply the Patches ---
+
+        // First CALL: We must force AL to 1 to bypass the JZ trap.
+        // 'mov al, 1' is 2 bytes. The original CALL is 5 bytes. 
+        // We pad the remaining 3 bytes with NOPs.
+        std::string patch1 = "mov al, 1; nop; nop; nop;";
+        PLOG_INFO << "[*] Patching 1st Call: " << patch1;
+        patcher.WritePatch(firstCallRva, patch1);
+
+        // Second CALL: We just need to completely erase the 5-byte call.
+        std::string patch2 = "nop; nop; nop; nop; nop;";
+        PLOG_INFO << "[*] Patching 2nd Call: " << patch2;
+        patcher.WritePatch(secondCallRva, patch2);
+
+        PLOG_INFO << "[+] Steam Initialization successfully neutralized!";
     }
 
     static bool ApplyPatches(const std::string& inPath, const std::string& outPath)
@@ -618,7 +725,7 @@ namespace pePatcher
 
         uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;
 
-        if (!PatchMutexCheck(patcher, winMainRva))
+        if (!BypassMutexAndSteam(patcher, winMainRva))
         {
             PLOG_ERROR << "[-] Failed to patch Mutex in WinMain patch.";
             return false;
@@ -633,6 +740,11 @@ namespace pePatcher
         if (!InitFunctionBypasses(patcher, initEngineRva))
         {
             PLOG_ERROR << "[-] Failed to bypass functions in final function patch.";
+            return false;
+        }
+        if (!BypassSteamInit(patcher, initEngineRva))
+        {
+            PLOG_ERROR << "[-] Failed to bypass steam init functions in final function patch.";
             return false;
         }
         //

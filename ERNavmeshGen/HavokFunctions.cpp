@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <unordered_map>
 #include <Windows.h>
-#include "../PELoader/PEHelper.h"
 #include <winternl.h> // Required for PTEB structure
 
 #include "EXE2DLL.h"
