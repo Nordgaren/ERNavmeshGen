@@ -22,8 +22,5 @@ TEST(ERNAVMA_CONVERT, EXPORTS)
     // Leave this empty if you are testing on collisions made with modding tools.
     const char* compendium = std::getenv("ERNAVMA_CONVERT_COMPENDIUM"); // ERNAVMA_CONVERT_COMPENDIUM = P:\ath\to\test.compendium;
 
-    EXPECT_TRUE(GenerateNavMeshFromCollisionAPI(
-        R"(C:\Users\rscos\Documents\mod-dev\elden-scrolls\mod\cache\terrain\ext-1,-8_split1.hkx)", 
-        R"(C:\Users\rscos\Documents\mod-dev\elden-scrolls\mod\cache\terrain\next-1,-8_split1.hkx)", 
-        compendium));
+    EXPECT_TRUE(GenerateNavMeshFromCollisionAPI(in, out, compendium));
 }
