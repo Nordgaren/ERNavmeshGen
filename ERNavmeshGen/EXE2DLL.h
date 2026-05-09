@@ -360,6 +360,8 @@ namespace pePatcher
         // patcher.buffer[fileOffset + 1] = 0x90;
 
         PLOG_INFO << "[+] Init Engine successfully aborted at CSWindow!";
+        
+        return true;
     }
 
 
