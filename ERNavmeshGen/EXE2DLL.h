@@ -360,6 +360,7 @@ namespace pePatcher
         // patcher.buffer[fileOffset + 1] = 0x90;
 
         PLOG_INFO << "[+] Init Engine successfully aborted at CSWindow!";
+        return true;
     }
 
 
@@ -547,6 +548,7 @@ namespace pePatcher
         patcher.WritePatch(secondCallRva, patch2);
 
         PLOG_INFO << "[+] Steam Initialization successfully neutralized!";
+        return true;
     }
 
     static bool ApplyPatches(const std::string& inPath, const std::string& outPath)

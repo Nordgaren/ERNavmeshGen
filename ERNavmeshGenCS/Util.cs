@@ -33,7 +33,7 @@ public class Util {
                 }
 
                 string[] split = line.Split(seperator, StringSplitOptions.RemoveEmptyEntries);
-                string libpath = split.FirstOrDefault(x => x.ToLower().Contains("steam")).Replace("\"", "").Replace("\\\\", "\\");
+                string libpath = split.First(x => x.ToLower().Contains("steam")).Replace("\"", "").Replace("\\\\", "\\");
                 string libraryPath = libpath + gamePath;
 
                 if (File.Exists(libraryPath)) {
@@ -46,12 +46,12 @@ public class Util {
 
         public static string? GetSteamInstallPath()
         {
-            string installPath = null;
+            string? installPath = null;
 
-            foreach ((string Path, string Value) pathValueTuple in _pathValueTuple)
+            foreach ((string path, string value) in _pathValueTuple)
             {
-                string registryKey = pathValueTuple.Path;
-                installPath = (string)Registry.GetValue(registryKey, pathValueTuple.Value, null);
+                string registryKey = path;
+                installPath = Registry.GetValue(registryKey, value, null) as string;
 
                 if (installPath != null) {
                     break;
