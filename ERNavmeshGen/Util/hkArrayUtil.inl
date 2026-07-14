@@ -43,7 +43,7 @@ template <typename T>
 template <typename... TArgs>
 void hkArrayManager::hkArrayManagerT<T>::CreateManaged(hkArray<T>* array, TArgs&&... args)
 {
-	m_arrays.try_emplace(array, std::forward<TArgs>(args)...);
+	m_arrays.insert_or_assign(array, std::vector<T>(std::forward<TArgs>(args)...));
 	std::vector<T>& vector = m_arrays.at(array);
 	Synchronize(vector, array);
 }
