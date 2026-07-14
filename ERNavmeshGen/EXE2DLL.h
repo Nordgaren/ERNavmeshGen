@@ -549,6 +549,7 @@ namespace pePatcher
         patcher.WritePatch(secondCallRva, patch2);
 
         PLOG_INFO << "[+] Steam Initialization successfully neutralized!";
+        return true;
     }
 
     static bool ApplyPatches(const std::string& inPath, const std::string& outPath)
@@ -725,7 +726,6 @@ namespace pePatcher
             return false;
         }
 
-        uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;
 
         if (!BypassMutexAndSteam(patcher, winMainRva))
         {
@@ -733,7 +733,7 @@ namespace pePatcher
             return false;
         }
 
-
+        uint32_t initEngineRva = mainLoopSearchCursor.GetAbsoluteAddress(0) - imageBase;
         if (!AbortInitAtCSWindow(patcher, initEngineRva))
         {
             PLOG_ERROR << "[-] Failed to bypass CSWindow init in init engine.";
