@@ -3,13 +3,20 @@
 public class ERNavmeshGen : IDisposable {
     private string _erPath;
     // This is for the future, in case the DS3NavmeshGen.dll needs to be reloaded.  
+#pragma warning disable CS0169 // Add readonly modifier
     private IntPtr _navgen;
+#pragma warning restore CS0169 // Add readonly modifier
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public ERNavmeshGen(string path) {
         if (!SetupNavmeshDll(path))
         {
             throw new FileNotFoundException("Could not set Elden Ring path. Please pass a valid path to the constructor.");
         }
     }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public ERNavmeshGen() {
         string? path = Util.TryGetGameInstallLocation($"\\steamapps\\common\\Elden Ring\\Game\\EldenRing.exe");
         if (path == null) {
@@ -21,12 +28,14 @@ public class ERNavmeshGen : IDisposable {
             throw new FileNotFoundException("Could not set Elden Ring path.");
         }
     }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+
     public bool SetupNavmeshDll(string path) {
         _erPath = path;
         if (!path.EndsWith(".exe")) {
             throw new FileNotFoundException($"could not find {path}\\EldenRing.exe. Please provide a path to the \"Elden Ring\\Game\" folder.");
         }
-        Kernel32.SetDllDirectory(Path.GetDirectoryName(path));
+        Kernel32.SetDllDirectory(Path.GetDirectoryName(path) ?? throw new Exception("Invalid Elden Ring path"));
         
         if (!HavokNavmeshNative.SetGamePath(path))
         {

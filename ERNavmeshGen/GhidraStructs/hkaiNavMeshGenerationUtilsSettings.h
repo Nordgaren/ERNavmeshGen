@@ -31,60 +31,60 @@ struct hkaiNavMeshGenerationUtilsSettings {
 	};
 
 	struct RegionPruningSettings {
-		float minRegionArea;
-		float minDistanceToSeedPoints;
-		float borderPreservationTolerance;
-		bool preserveVerticalBorderRegions;
-		bool pruneBeforeTriangulation;
-		struct hkArrayGeneric regionSeedPoints;
-		struct hkArrayGeneric regionConnections; /* actual type is hkArray<hkaiNavMeshGenerationUtilsSettings::RegionPruningSettings::RegionConnection, hkContainerHeapAllocator> */
+		float minRegionArea{};
+		float minDistanceToSeedPoints{};
+		float borderPreservationTolerance{};
+		bool preserveVerticalBorderRegions{};
+		bool pruneBeforeTriangulation{};
+		struct hkArrayGeneric regionSeedPoints {};
+		struct hkArrayGeneric regionConnections {}; /* actual type is hkArray<hkaiNavMeshGenerationUtilsSettings::RegionPruningSettings::RegionConnection, hkContainerHeapAllocator> */
 	};
 
 	struct WallClimbingSettings {
-		bool enableWallClimbing;
-		bool excludeWalkableFaces;
+		bool enableWallClimbing{};
+		bool excludeWalkableFaces{};
 	};
 
 	struct vtable;
 
-	vtable* vftable;
-	hkReferencedObject_Data super_hkReferencedObject;
-	float characterHeight;
-	hkVector4 up;
-	float quantizationGridSize;
-	float maxWalkableSlope;
-	TriangleWinding triangleWinding;
-	float degenerateAreaThreshold;
-	float degenerateWidthThreshold;
-	float convexThreshold;
-	int maxNumEdgesPerFace;
-	hkaiNavMeshEdgeMatchingParameters edgeMatchingParams;
-	EdgeMatchingMetric edgeMatchingMetric;
-	int edgeConnectionIterations;
-	bool smallBoundaryEdgeGroupRemoval;
-	RegionPruningSettings regionPruningSettings;
-	WallClimbingSettings wallClimbingSettings;
-	hkAabb boundsAabb;
-	hkArrayGeneric carvers; /* hkArray<hkaiCarver, hkContainerHeapAllocator> */
-	hkArrayGeneric painters; /* hkArray<hkaiMaterialPainter, hkContainerHeapAllocator> */
-	void * painterOverlapCallback;
-	ConstructionFlagsBits defaultConstructionProperties;
-	hkArrayGeneric materialMap; /* hkArray<hkaiNavMeshGenerationUtilsSettings::MaterialConstructionPair, hkContainerHeapAllocator> */
-	bool fixupOverlappingTriangles;
-	hkaiOverlappingTriangles::Settings overlappingTrianglesSettings;
-	bool swapOverlappingAndQuantization;
-	bool weldInputVertices;
-	float weldThreshold;
-	float minCharacterWidth;
-	CharacterWidthUsage characterWidthUsage;
-	float maxCharacterWidth;
-	bool precalculateClearanceSeedingData;
-	bool enableSimplification;
-	hkaiNavMeshSimplificationUtils::Settings simplificationSettings;
-	int carvedMaterialDeprecated;
-	int carvedCuttingMaterialDeprecated;
-	bool checkEdgeGeometryConsistency;
-	bool saveInputSnapshot;
-	const char * snapshotFilename;
-	hkArrayGeneric overrideSettings; /* hkArray<hkaiNavMeshGenerationUtilsSettings::OverrideSettings, hkContainerHeapAllocator> */
+	vtable* vftable{};
+	hkReferencedObject_Data super_hkReferencedObject{};
+	float characterHeight{};
+	hkVector4 up{};
+	float quantizationGridSize{};
+	float maxWalkableSlope{};
+	TriangleWinding triangleWinding{};
+	float degenerateAreaThreshold{};
+	float degenerateWidthThreshold{};
+	float convexThreshold{};
+	int maxNumEdgesPerFace{};
+	hkaiNavMeshEdgeMatchingParameters edgeMatchingParams{};
+	EdgeMatchingMetric edgeMatchingMetric{};
+	int edgeConnectionIterations{};
+	bool smallBoundaryEdgeGroupRemoval{};
+	RegionPruningSettings regionPruningSettings{};
+	WallClimbingSettings wallClimbingSettings{};
+	hkAabb boundsAabb{};
+	hkArrayGeneric carvers{}; /* hkArray<hkaiCarver, hkContainerHeapAllocator> */
+	hkArrayGeneric painters{}; /* hkArray<hkaiMaterialPainter, hkContainerHeapAllocator> */
+	void* painterOverlapCallback{};
+	ConstructionFlagsBits defaultConstructionProperties{};
+	hkArrayGeneric materialMap{}; /* hkArray<hkaiNavMeshGenerationUtilsSettings::MaterialConstructionPair, hkContainerHeapAllocator> */
+	bool fixupOverlappingTriangles{};
+	hkaiOverlappingTriangles::Settings overlappingTrianglesSettings{};
+	bool swapOverlappingAndQuantization{};
+	bool weldInputVertices{};
+	float weldThreshold{};
+	float minCharacterWidth{};
+	CharacterWidthUsage characterWidthUsage{};
+	float maxCharacterWidth{};
+	bool precalculateClearanceSeedingData{};
+	bool enableSimplification{};
+	hkaiNavMeshSimplificationUtils::Settings simplificationSettings{};
+	int carvedMaterialDeprecated{};
+	int carvedCuttingMaterialDeprecated{};
+	bool checkEdgeGeometryConsistency{};
+	bool saveInputSnapshot{};
+	const char* snapshotFilename{};
+	hkArrayGeneric overrideSettings{}; /* hkArray<hkaiNavMeshGenerationUtilsSettings::OverrideSettings, hkContainerHeapAllocator> */
 };

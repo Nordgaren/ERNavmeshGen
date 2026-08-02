@@ -22,6 +22,7 @@ ipch/
 
 # Visual Studio files
 .vs/          # Visual Studio 2017+ hidden folder
+/.vs
 *.suo         # Solution user options
 *.user
 *.ncb
